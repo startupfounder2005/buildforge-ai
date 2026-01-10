@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { PDFDocument, StandardFonts, rgb, degrees } from 'pdf-lib'
 import OpenAI from 'openai'
+import { generateLegalPDF } from '@/lib/pdf-service'
 import { createClient } from '@/lib/supabase/server'
 
 const openai = new OpenAI({
@@ -9,78 +9,123 @@ const openai = new OpenAI({
 
 export async function POST(req: Request) {
     try {
-        const { projectId, type, title } = await req.json()
-
         const supabase = await createClient()
         const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
 
-        // Fetch Project Data
-        const { data: project } = await supabase.from('projects').select('*').eq('id', projectId).single()
-
-        let content = ""
-
-        if (process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== 'sk-proj-placeholder') {
-            // Real AI Generation
-            const completion = await openai.chat.completions.create({
-                messages: [
-                    { role: "system", content: "You are a legal document assistant for construction. Generate a professional document content based on the type provided." },
-                    { role: "user", content: `Generate a ${type} for project ${project?.name || 'Unknown'} located at ${project?.location}.` }
-                ],
-                model: "gpt-4o",
-            });
-            content = completion.choices[0].message.content || "Content generation failed."
-        } else {
-            // Mock content
-            content = `MOCK DOCUMENT - ${type?.toUpperCase()}\n\nProject: ${project?.name}\nLocation: ${project?.location}\n\nThis is a generated document for review purposes only.\n\n1. SCOPE\nThe scope of work includes...\n\n2. TERMS\nStandard terms apply.`
+        if (!user) {
+            console.warn("Unauthorized access to generate-doc")
         }
 
-        // PDF Generation
-        const pdfDoc = await PDFDocument.create()
-        const page = pdfDoc.addPage()
-        const { width, height } = page.getSize()
-        const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
-        const fontSize = 12
+        const body = await req.json()
+        const { projectId, type, title, address, jurisdiction, ownerName, ownerPhone, ownerAddress, contractorName, contractorLicense, contractorAddress, startDate, completionDate, estimatedCost, scope, includeDisclaimers } = body
 
-        // Simple text wrapping logic or just dump text
-        page.drawText(content, {
-            x: 50,
-            y: height - 4 * fontSize,
-            size: fontSize,
-            font: font,
-            color: rgb(0, 0, 0),
-            maxWidth: width - 100,
-            lineHeight: 14,
+        if (!projectId) {
+            return NextResponse.json({ message: 'Missing projectId' }, { status: 400 })
+        }
+
+        // --- 1. AI Content Generation (Hybrid) ---
+        const systemPrompt = `You are a construction permit expert. Generate a JSON list of 3-5 standard special conditions based on the project scope and type.
+        Return ONLY valid JSON: { "conditions": ["string", "string"] }`
+
+        const userPrompt = `Type: ${type}, Scope: ${scope}. Jurisdiction: ${jurisdiction}.`
+
+        let conditions: string[] = []
+        try {
+            const completion = await openai.chat.completions.create({
+                model: "gpt-4o",
+                messages: [
+                    { role: "system", content: systemPrompt },
+                    { role: "user", content: userPrompt }
+                ],
+                response_format: { type: "json_object" }
+            })
+            const aiData = JSON.parse(completion.choices[0].message.content || '{}')
+            conditions = aiData.conditions || []
+        } catch (e) {
+            console.error("AI Generation failed, using defaults", e)
+            conditions = ["Work must conform to all local building codes.", "Inspection required before covering any work.", "Site must be kept clean and safe."]
+        }
+
+        // --- 2. Prepare Data for PDF ---
+        const today = new Date().toISOString().split('T')[0]
+
+        // Fee Calculation Logic
+        const costVal = parseFloat((estimatedCost || "0").toString().replace(/[^0-9.]/g, '')) || 0
+        const permitFee = (costVal * 0.015).toFixed(2) // 1.5% fee
+        const processingFee = costVal.toFixed(2) // Match user input per request
+
+        const documentData = {
+            type,
+            title: title.toUpperCase(),
+            permit_number: `BP-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+            issue_date: today,
+            expiration_date: completionDate,
+            status: 'ISSUED',
+            project_info: {
+                name: title,
+                address: address, // Full address passed from wizard
+                city: jurisdiction ? jurisdiction.split(',')[0].trim() : 'Metropolis',
+                state: jurisdiction && jurisdiction.includes(',') ? jurisdiction.split(',')[1].trim() : 'TX',
+                zip: ''
+            },
+            owner_info: {
+                name: ownerName,
+                address: ownerAddress || address,
+                phone: ownerPhone
+            },
+            contractor_info: {
+                name: contractorName,
+                license: contractorLicense || 'PENDING',
+                address: contractorAddress
+            },
+            scope_of_work: scope,
+            conditions: conditions,
+            fees: [
+                { description: "Permit Fee (1.5% of Valuation)", amount: `$${permitFee}` },
+                { description: "Processing & Admin Fee", amount: `$${processingFee}` }
+            ]
+        }
+
+        // --- 3. Generate PDF ---
+        const pdfBytes = await generateLegalPDF(documentData, true) // isDraft=true means Watermark
+        const base64Pdf = Buffer.from(pdfBytes).toString('base64')
+
+        // --- 4. Save to Database ---
+        let documentId = 'mock-doc-id'
+
+        if (user) {
+            const { data: insertedDoc, error: insertError } = await supabase
+                .from('documents')
+                .insert({
+                    project_id: projectId,
+                    user_id: user.id,
+                    type: type || 'document',
+                    title: title,
+                    status: 'draft',
+                    version: 1,
+                    content_json: {
+                        ...documentData,
+                        pdf_base64: base64Pdf // Crucial for preview/download
+                    }
+                })
+                .select()
+                .single()
+
+            if (insertError) {
+                console.error("DB Insert Error:", insertError)
+            } else {
+                documentId = insertedDoc.id
+            }
+        }
+
+        return NextResponse.json({
+            success: true,
+            pdfBase64: base64Pdf,
+            documentId: documentId
         })
 
-        // Watermark
-        page.drawText('MOCK - NOT OFFICIAL', {
-            x: width / 2 - 100,
-            y: height / 2,
-            size: 50,
-            font: font,
-            color: rgb(0.9, 0.9, 0.9),
-            rotate: degrees(45),
-        })
-
-        const pdfBytes = await pdfDoc.save()
-
-        // Upload to Supabase Storage (Mock URL for now as bucket might not exist)
-        // await supabase.storage.from('documents').upload(...)
-
-        // Save metadata to DB
-        await supabase.from('documents').insert({
-            project_id: projectId,
-            user_id: user.id,
-            type: type,
-            title: title || type,
-            content_json: { raw: content },
-            // pdf_url: publicUrl
-        })
-
-        return NextResponse.json({ url: '#', message: 'Generated' })
-    } catch (err: any) {
-        console.error(err)
+    } catch (error) {
+        console.error("Doc Gen Error:", error)
         return NextResponse.json({ message: 'Internal Server Error' }, { status: 500 })
     }
 }

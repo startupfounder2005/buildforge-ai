@@ -164,3 +164,39 @@ export async function deleteProject(id: string) {
     revalidatePath('/dashboard/projects')
     return { message: 'Success' }
 }
+
+export async function deleteDocument(id: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { message: 'Unauthorized' }
+
+    const { error } = await supabase
+        .from('documents')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id)
+
+    if (error) return { message: 'Database Error' }
+
+    revalidatePath('/dashboard/projects/[id]', 'page')
+    return { message: 'Success' }
+}
+
+export async function createMilestone(projectId: string, title: string, start: string, end: string) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { message: 'Unauthorized' }
+
+    const { error } = await supabase.from('project_milestones').insert({
+        project_id: projectId,
+        title,
+        start_date: start,
+        end_date: end,
+        status: 'pending'
+    })
+
+    if (error) return { message: 'Database Error', error }
+
+    revalidatePath(`/dashboard/projects/${projectId}`)
+    return { message: 'Success' }
+}

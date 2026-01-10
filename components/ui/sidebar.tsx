@@ -303,7 +303,7 @@ const SidebarRail = React.forwardRef<
   const { toggleSidebar } = useSidebar()
 
   return (
-    <button
+    <button style={{ cursor: 'pointer' }}
       ref={ref}
       data-sidebar="rail"
       aria-label="Toggle Sidebar"

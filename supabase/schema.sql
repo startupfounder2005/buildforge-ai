@@ -94,3 +94,53 @@ drop policy if exists "Users can CRUD own documents" on public.documents;
 create policy "Users can CRUD own documents"
   on public.documents for all
   using ( auth.uid() = user_id ); 
+
+-- Add columns if they don't exist (Idempotent approach for Documents)
+do $$ 
+begin
+    if not exists (select 1 from information_schema.columns where table_name = 'documents' and column_name = 'status') then
+        alter table public.documents add column status text default 'draft';
+    end if;
+    if not exists (select 1 from information_schema.columns where table_name = 'documents' and column_name = 'version') then
+        alter table public.documents add column version int default 1;
+    end if;
+end $$;
+
+
+-- PROJECT NOTES TABLE
+create table if not exists public.project_notes (
+  id uuid default uuid_generate_v4() primary key,
+  project_id uuid references public.projects(id) on delete cascade not null,
+  user_id uuid references public.profiles(id) not null,
+  content text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+alter table public.project_notes enable row level security;
+
+drop policy if exists "Users can CRUD own notes" on public.project_notes;
+create policy "Users can CRUD own notes"
+  on public.project_notes for all
+  using ( auth.uid() = user_id );
+
+
+-- PROJECT MILESTONES TABLE
+create table if not exists public.project_milestones (
+  id uuid default uuid_generate_v4() primary key,
+  project_id uuid references public.projects(id) on delete cascade not null,
+  title text not null,
+  start_date date,
+  end_date date,
+  status text default 'pending', -- 'pending', 'in_progress', 'completed'
+  created_at timestamptz default now()
+);
+
+alter table public.project_milestones enable row level security;
+
+drop policy if exists "Users can CRUD own milestones" on public.project_milestones;
+create policy "Users can CRUD own milestones"
+  on public.project_milestones for all
+  using ( auth.uid() = project_id in (select id from public.projects where user_id = auth.uid()) );
+-- Note: Simplified RLS for milestones assuming project ownership implies milestone ownership
+ 

@@ -1,4 +1,5 @@
 import { AppSidebar } from "@/components/dashboard/AppSidebar"
+import { GlobalSearch } from "@/components/global/GlobalSearch"
 import {
     SidebarProvider,
     SidebarTrigger,
@@ -56,19 +57,12 @@ export default async function DashboardLayout({
                     </div>
 
                     {/* Search Bar - Center/Left aligned */}
-                    <div className="flex-1 max-w-xl ml-4 hidden md:block">
-                        <div className="relative">
-                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                            <Input
-                                type="search"
-                                placeholder="Search projects, documents..."
-                                className="pl-8 bg-card border-none ring-offset-background focus-visible:ring-1 focus-visible:ring-ring"
-                            />
-                        </div>
+                    <div className="flex-1 max-w-xl ml-4 hidden md:block z-50">
+                        <GlobalSearch />
                     </div>
 
                     <div className="ml-auto flex items-center gap-2">
-                        <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+                        <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-yellow-500 hover:text-black transition-colors">
                             <Bell className="h-5 w-5" />
                         </Button>
 
@@ -103,7 +97,7 @@ export default async function DashboardLayout({
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <form action={signout}>
-                                    <button className="w-full text-left">
+                                    <button style={{ cursor: 'pointer' }} className="w-full text-left">
                                         <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer">
                                             <LogOut className="mr-2 h-4 w-4" /> Log out
                                         </DropdownMenuItem>
