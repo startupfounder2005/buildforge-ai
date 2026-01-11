@@ -53,6 +53,8 @@ type FormData = z.infer<typeof formSchema>
 
 interface NewDocumentWizardProps {
     projectId: string
+    onSuccess?: () => void
+    onCancel?: () => void
 }
 
 // --- Document Categories & Types ---
@@ -70,7 +72,7 @@ const permitTypes = [
     { id: 'mechanical_permit', title: 'Mechanical Permit', desc: 'HVAC, ductwork, and gas lines.', icon: Hammer },
 ]
 
-export function NewDocumentWizard({ projectId }: NewDocumentWizardProps) {
+export function NewDocumentWizard({ projectId, onSuccess, onCancel }: NewDocumentWizardProps) {
     const router = useRouter()
     const [step, setStep] = useState(1)
     const [loading, setLoading] = useState(false)
@@ -130,7 +132,11 @@ export function NewDocumentWizard({ projectId }: NewDocumentWizardProps) {
         }
         // If in Step 1 and NO category, go back to previous page (Project Dashboard)
         if (step === 1 && !selectedCategory) {
-            router.back()
+            if (onCancel) {
+                onCancel()
+            } else {
+                router.back()
+            }
             return
         }
         setStep(prev => Math.max(prev - 1, 1))
@@ -150,7 +156,11 @@ export function NewDocumentWizard({ projectId }: NewDocumentWizardProps) {
             const result = await res.json()
             if (res.ok) {
                 toast.success('Document Generated Successfully')
-                router.push(`/dashboard/projects/${projectId}?tab=documents`)
+                if (onSuccess) {
+                    onSuccess()
+                } else {
+                    router.push(`/dashboard/projects/${projectId}?tab=documents`)
+                }
             } else {
                 toast.error(result.message || 'Generation Failed')
             }
@@ -170,7 +180,7 @@ export function NewDocumentWizard({ projectId }: NewDocumentWizardProps) {
     ]
 
     return (
-        <div className="max-w-4xl mx-auto relative">
+        <div className="max-w-4xl mx-auto relative cursor-default text-left">
             {/* Progress Steps */}
             <div className="flex items-center justify-between mb-8 max-w-2xl mx-auto px-4 relative">
                 {steps.map((s) => (

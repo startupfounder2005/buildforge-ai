@@ -202,7 +202,7 @@ export function ProjectsClientWrapper({ initialProjects }: ProjectsClientWrapper
                                                     </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem
-                                                        className="text-red-600 focus:text-red-600"
+                                                        className="text-red-600 focus:bg-red-600 focus:text-white cursor-pointer"
                                                         onClick={() => handleDeleteClick(project.id)}
                                                     >
                                                         <Trash2 className="mr-2 h-4 w-4" /> Delete Project

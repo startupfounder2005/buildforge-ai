@@ -5,7 +5,7 @@ import { motion } from 'framer-motion'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Plus, FileText, Calendar, Clock } from "lucide-react"
+import { Plus, FileText, Calendar, Clock, ArrowLeft } from "lucide-react"
 import Link from 'next/link'
 import { ProjectTimeline } from '@/components/projects/ProjectTimeline'
 import { ProjectNotes } from '@/components/projects/ProjectNotes'
@@ -27,9 +27,16 @@ export function ProjectDetailsClient({ project, documents, latestDocs, userId, i
     return (
         <div className="flex flex-col gap-6 p-4 md:p-8">
             <div className="flex items-center justify-between">
-                <div>
-                    <h2 className="text-3xl font-bold tracking-tight">{project.name}</h2>
-                    <p className="text-muted-foreground capitalize">{project.status} • {project.location}</p>
+                <div className="flex items-center gap-4">
+                    <Link href="/dashboard/projects">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-zinc-100 hover:bg-transparent transition-colors">
+                            <ArrowLeft className="h-5 w-5" />
+                        </Button>
+                    </Link>
+                    <div>
+                        <h2 className="text-3xl font-bold tracking-tight">{project.name}</h2>
+                        <p className="text-muted-foreground capitalize">{project.status} • {project.location}</p>
+                    </div>
                 </div>
                 <div className="flex items-center gap-2">
                     <ImportDocumentDialog projectId={project.id} userId={userId} />

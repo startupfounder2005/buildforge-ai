@@ -101,7 +101,7 @@ export default async function DashboardPage() {
                 {/* 2. Main Content Area (Charts & Quick Actions) */}
                 <div className="col-span-1 lg:col-span-4 flex flex-col gap-6">
                     <InsightsChart distribution={projectDistribution} />
-                    <QuickActions />
+                    <QuickActions projects={allProjects} userId={user.id} />
                 </div>
 
                 {/* 3. Sidebar Widgets (Activity & Deadlines) */}

@@ -280,7 +280,7 @@ export function DocumentTable({ documents }: DocumentTableProps) {
                                         )}
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem
-                                            className="text-red-600 focus:text-red-600"
+                                            className="text-red-600 focus:bg-red-600 focus:text-white cursor-pointer"
                                             onClick={() => handleDeleteClick(doc.id)}
                                             disabled={deletingId === doc.id}
                                         >

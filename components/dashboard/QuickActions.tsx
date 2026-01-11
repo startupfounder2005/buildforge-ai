@@ -5,8 +5,14 @@ import { Button } from "@/components/ui/button"
 import { Plus, FilePlus, Zap } from "lucide-react"
 import { motion } from "framer-motion"
 import Link from "next/link"
+import { GenerateDocumentGlobalDialog } from "@/components/documents/GenerateDocumentGlobalDialog"
 
-export function QuickActions() {
+interface QuickActionsProps {
+    projects: { id: string, name: string }[]
+    userId: string
+}
+
+export function QuickActions({ projects, userId }: QuickActionsProps) {
     return (
         <Card className="col-span-1">
             <CardHeader>
@@ -26,12 +32,16 @@ export function QuickActions() {
                 </motion.div>
 
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                    <Link href="/dashboard/documents">
-                        <Button className="w-full justify-start h-12" variant="outline">
-                            <FilePlus className="mr-2 h-4 w-4 text-blue-500" />
-                            Generate Document
-                        </Button>
-                    </Link>
+                    <GenerateDocumentGlobalDialog
+                        projects={projects}
+                        userId={userId}
+                        customTrigger={
+                            <Button className="w-full justify-start h-12" variant="outline">
+                                <FilePlus className="mr-2 h-4 w-4 text-blue-500" />
+                                Generate Document
+                            </Button>
+                        }
+                    />
                 </motion.div>
 
                 <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
