@@ -8,31 +8,28 @@ export const ObsidianLogo = ({ className }: { className?: string }) => {
             xmlns="http://www.w3.org/2000/svg"
             className={className}
         >
-            {/* Sledgehammer Head (Purple) */}
-            <path
-                d="M20 20 L80 20 L85 25 L85 55 L80 60 L20 60 L15 55 L15 25 Z"
-                fill="#7C3AED"
-                stroke="#7C3AED"
-                strokeWidth="2"
-                strokeLinejoin="round"
-            />
+            <g transform="rotate(-45 50 50)">
+                {/* Handle (Purple) */}
+                <path
+                    d="M42 35 L42 95 L58 95 L58 35 Z"
+                    fill="#7C3AED"
+                />
 
-            {/* Handle (Purple) */}
-            <path
-                d="M45 60 L45 95 L55 95 L55 60 Z"
-                fill="#7C3AED"
-            />
+                {/* Sledgehammer Head (Purple) */}
+                <path
+                    d="M20 15 L80 15 L85 20 L85 35 L80 40 L20 40 L15 35 L15 20 Z"
+                    fill="#7C3AED"
+                />
 
-            {/* Black Lightning Crack - Zig Zag down the center */}
-            <path
-                d="M50 20 L45 35 L55 45 L48 60 L52 75 L50 90"
-                stroke="black"
-                strokeWidth="3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-            />
-
-            {/* Subtle Highlight/Glow on edge (Optional, keeping simple for now) */}
+                {/* Black Lightning Crack - Zig Zag down the center */}
+                <path
+                    d="M50 15 L45 30 L55 45 L45 60 L52 75 L50 95"
+                    stroke="black"
+                    strokeWidth="4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
+            </g>
         </svg>
     );
 };
