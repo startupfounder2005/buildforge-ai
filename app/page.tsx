@@ -4,13 +4,13 @@ import { Button } from "@/components/ui/button";
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background text-foreground">
-      <main className="flex flex-col items-center gap-8 p-8 text-center sm:p-20">
-        <h1 className="text-5xl font-extrabold tracking-tight sm:text-6xl text-primary">
-          Obsidian
+      <main className="flex flex-col items-center gap-6 p-8 text-center sm:p-20">
+        <div className="relative size-32 md:size-48">
+          <img src="/logo.png" alt="Obsidian Logo" className="object-contain w-full h-full drop-shadow-[0_0_20px_rgba(0,71,171,0.5)]" />
+        </div>
+        <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-white font-[family-name:var(--font-geist-sans)]">
+          Obsidian — Unbreakable Construction Intelligence
         </h1>
-        <p className="text-lg text-muted-foreground max-w-xl">
-          Forging the Future of Construction Intelligence. Automate permits, contracts, and proposals with ease.
-        </p>
 
         <div className="flex gap-4">
           <Button asChild size="lg">
