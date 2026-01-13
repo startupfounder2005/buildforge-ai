@@ -83,17 +83,17 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             {...props}
             className="bg-card border-r border-border flex-none"
         >
-            <SidebarHeader className="bg-[#7C3AED] p-4 text-white">
+            <SidebarHeader className="p-4">
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild className="h-auto hover:bg-[#6D34C9] data-[active=true]:bg-[#6D34C9] transition-colors">
+                        <SidebarMenuButton size="lg" asChild className="h-auto hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                             <Link href="/dashboard" className="flex flex-row items-center justify-start gap-3">
                                 <div className="flex aspect-square size-10 items-center justify-center rounded-lg overflow-hidden shrink-0">
-                                     <img src="/logo.png" alt="Obsidian" className="size-full object-contain drop-shadow-md" />
+                                    <img src="/logo.png" alt="Obsidian" className="size-full object-contain" />
                                 </div>
                                 <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                                    <span className="truncate font-bold text-white text-lg">Obsidian</span>
-                                    <span className="truncate text-xs text-blue-100 font-medium">Enterprise</span>
+                                    <span className="truncate font-bold text-sidebar-foreground text-lg">Obsidian</span>
+                                    <span className="truncate text-xs text-muted-foreground font-medium">Enterprise</span>
                                 </div>
                             </Link>
                         </SidebarMenuButton>
