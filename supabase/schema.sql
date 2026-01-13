@@ -8,6 +8,8 @@ create table if not exists public.profiles (
   full_name text,
   company_name text,
   role text default 'user',
+  phone text,
+  avatar_url text,
   subscription_tier text default 'free', -- 'free', 'pro'
   usage_docs_this_month int default 0,
   created_at timestamptz default now(),
@@ -92,8 +94,7 @@ alter table public.project_expenses enable row level security;
 drop policy if exists "Users can CRUD own expenses" on public.project_expenses;
 create policy "Users can CRUD own expenses"
   on public.project_expenses for all
-  using ( auth.uid() = project_id in (select id from public.projects where user_id = auth.uid()) );
-
+  using ( project_id in (select id from public.projects where user_id = auth.uid()) );
 
 -- DOCUMENTS TABLE
 create table if not exists public.documents (
@@ -161,6 +162,26 @@ alter table public.project_milestones enable row level security;
 drop policy if exists "Users can CRUD own milestones" on public.project_milestones;
 create policy "Users can CRUD own milestones"
   on public.project_milestones for all
-  using ( auth.uid() = project_id in (select id from public.projects where user_id = auth.uid()) );
+  using ( project_id in (select id from public.projects where user_id = auth.uid()) );
 -- Note: Simplified RLS for milestones assuming project ownership implies milestone ownership
+
+
+-- STORAGE SETUP
+-- Create Avatars bucket (idempotent)
+insert into storage.buckets (id, name, public)
+values ('avatars', 'avatars', true)
+on conflict (id) do nothing;
+
+-- Storage Policies
+create policy "Avatar images are publicly accessible."
+  on storage.objects for select
+  using ( bucket_id = 'avatars' );
+
+create policy "Anyone can upload an avatar."
+  on storage.objects for insert
+  with check ( bucket_id = 'avatars' );
+
+create policy "Anyone can update an avatar."
+  on storage.objects for update
+  with check ( bucket_id = 'avatars' );
  

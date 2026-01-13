@@ -58,7 +58,7 @@ const step4Schema = z.object({
 })
 
 const step5Schema = z.object({
-    includeDisclaimers: z.boolean().default(true),
+    includeDisclaimers: z.boolean(),
     agreeToMock: z.boolean().refine(val => val === true, "You must acknowledge this is a mock document"),
 })
 
