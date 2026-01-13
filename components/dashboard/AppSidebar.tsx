@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { ObsidianLogo } from "@/components/ui/ObsidianLogo"
 import {
     SquareTerminal, // Dashboard
     FolderOpen, // Projects
@@ -88,8 +89,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild className="h-auto hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                             <Link href="/dashboard" className="flex flex-row items-center justify-start gap-3">
-                                <div className="flex aspect-square size-10 items-center justify-center rounded-lg overflow-hidden shrink-0">
-                                    <img src="/logo.png" alt="Obsidian" className="size-full object-contain" />
+                                <div className="flex aspect-square size-10 items-center justify-center shrink-0">
+                                    <ObsidianLogo className="size-full drop-shadow-sm" />
                                 </div>
                                 <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                                     <span className="truncate font-bold text-sidebar-foreground text-lg">Obsidian</span>
