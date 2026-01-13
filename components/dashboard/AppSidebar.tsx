@@ -88,11 +88,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
                             <Link href="/dashboard">
-                                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                                    <Command className="size-4" />
+                                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-black text-sidebar-primary-foreground border border-sidebar-primary/20 overflow-hidden">
+                                    <img src="/logo.png" alt="Obsidian" className="size-5 object-contain" />
                                 </div>
                                 <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-                                    <span className="truncate font-semibold text-foreground">BuildForge AI</span>
+                                    <span className="truncate font-semibold text-foreground">Obsidian</span>
                                     <span className="truncate text-xs text-muted-foreground">Enterprise</span>
                                 </div>
                             </Link>
@@ -156,7 +156,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             </SidebarContent>
             <SidebarFooter className="p-4 border-t border-border">
                 <div className="text-xs text-muted-foreground text-center group-data-[collapsible=icon]:hidden">
-                    &copy; 2026 BuildForge AI
+                    &copy; 2026 Obsidian
                 </div>
             </SidebarFooter>
         </Sidebar>

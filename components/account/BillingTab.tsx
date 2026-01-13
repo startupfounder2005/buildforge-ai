@@ -54,7 +54,7 @@ export function BillingTab({ plan = 'free' }: { plan?: string }) {
                         <CardTitle className="text-2xl flex items-center gap-2">
                             Pro <Zap className="h-5 w-5 text-yellow-500 fill-yellow-500" />
                         </CardTitle>
-                        <CardDescription>Unlock full power of BuildForge AI.</CardDescription>
+                        <CardDescription>Unlock full power of Obsidian.</CardDescription>
                         <div className="mt-4">
                             <span className="text-4xl font-bold">€49</span>
                             <span className="text-muted-foreground">/month</span>

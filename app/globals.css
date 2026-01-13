@@ -3,21 +3,17 @@
 @plugin "tailwindcss-animate";
 
 :root {
-  /* Strict User Palette */
-  --background: 0 0% 6.7%;
-  /* #111111 */
+  /* Obsidian Palette */
+  --background: 0 0% 3.9%; /* #0A0A0A */
   --foreground: 0 0% 98%;
 
-  --card: 0 0% 12.2%;
-  /* #1F1F1F */
+  --card: 0 0% 6.7%; /* #111111 */
   --card-foreground: 0 0% 98%;
 
-  --popover: 0 0% 12.2%;
-  /* Match card */
+  --popover: 0 0% 6.7%; /* Match card */
   --popover-foreground: 0 0% 98%;
 
-  --primary: 215 100% 33.5%;
-  /* #0047AB Cobalt Blue */
+  --primary: 215 100% 33.5%; /* #0047AB Neon Blue */
   --primary-foreground: 0 0% 98%;
 
   --secondary: 0 0% 15%;
@@ -26,26 +22,23 @@
   --muted: 0 0% 15%;
   --muted-foreground: 0 0% 64%;
 
-  --accent: 48 100% 50%;
-  /* #FFD700 Gold Highlights (used as accent) */
-  --accent-foreground: 0 0% 9%;
+  --accent: 263 70% 50%; /* #7C3AED Subtle Purple Highlights */
+  --accent-foreground: 0 0% 98%;
 
-  --destructive: 0 84% 60%;
+  --destructive: 0 62.8% 30.6%;
   --destructive-foreground: 0 0% 98%;
 
   --success: 155 100% 39%;
-  /* #00C875 Green Toggles */
 
   --border: 0 0% 20%;
   --input: 0 0% 20%;
   --ring: 215 100% 33.5%;
-  /* Match primary */
 
-  --sidebar-background: 0 0% 6.7%;
+  --sidebar-background: 0 0% 3.9%; /* #0A0A0A */
   --sidebar-foreground: 0 0% 98%;
   --sidebar-primary: 215 100% 33.5%;
   --sidebar-primary-foreground: 0 0% 98%;
-  --sidebar-accent: 0 0% 25%;
+  --sidebar-accent: 263 70% 50%; /* Purple sidebar accents */
   --sidebar-accent-foreground: 0 0% 98%;
   --sidebar-border: 0 0% 20%;
   --sidebar-ring: 215 100% 33.5%;
