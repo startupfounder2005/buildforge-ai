@@ -9,6 +9,8 @@ create table if not exists public.profiles (
   company_name text,
   role text default 'user',
   phone text,
+  phone_verified boolean default false,
+  bio text,
   avatar_url text,
   subscription_tier text default 'free', -- 'free', 'pro'
   usage_docs_this_month int default 0,

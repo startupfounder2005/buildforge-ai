@@ -10,9 +10,7 @@ export default function Home() {
 
       <main className="relative z-10 flex flex-col items-center gap-10 p-8 text-center sm:p-20">
         <div className="relative size-40 md:size-80 animate-in fade-in zoom-in duration-1000">
-          {/* Enhanced Logo Glow */}
-          <div className="absolute inset-0 bg-blue-500/20 blur-[100px] rounded-full animate-pulse" />
-          <ObsidianLogo className="relative z-10 w-full h-full drop-shadow-[0_0_30px_rgba(0,71,171,0.8)]" />
+          <ObsidianLogo className="relative z-10 w-full h-full" />
         </div>
 
         <div className="space-y-4 max-w-4xl">
