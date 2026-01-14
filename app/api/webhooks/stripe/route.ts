@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
 import Stripe from 'stripe'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
     apiVersion: '2024-12-18.acacia' as any, // latest api version
@@ -23,16 +23,26 @@ export async function POST(req: Request) {
         return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 })
     }
 
-    const supabase = await createClient()
+    // Use Admin Client to bypass RLS
+    const supabase = createAdminClient()
 
     if (event.type === 'checkout.session.completed') {
         const session = event.data.object as Stripe.Checkout.Session
         const userId = session.metadata?.userId
 
         if (userId) {
-            await supabase.from('profiles').update({
-                subscription_tier: 'pro'
+            console.log(`[Stripe Webhook] Upgrading user ${userId} to PRO`)
+            const { error } = await supabase.from('profiles').update({
+                subscription_tier: 'pro',
+                stripe_customer_id: session.customer as string // Ensure customer ID is synced
             }).eq('id', userId)
+
+            if (error) {
+                console.error('[Stripe Webhook] Database Update Failed:', error)
+                return new NextResponse('Database Error', { status: 500 })
+            }
+        } else {
+            console.error('[Stripe Webhook] Missing userId in session metadata')
         }
     }
 

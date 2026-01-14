@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 
@@ -192,16 +193,18 @@ export async function uploadAvatar(formData: FormData) {
         .from('avatars')
         .getPublicUrl(filePath)
 
-    // 3. Update Profile
-    const { error: dbError } = await supabase
+    // 3. Update Profile using Admin Client (Bypass RLS)
+    const supabaseAdmin = createAdminClient()
+    const { error: dbError } = await supabaseAdmin
         .from('profiles')
         .update({ avatar_url: publicUrl })
         .eq('id', user.id)
 
     if (dbError) {
-        return { message: 'Database Update Failed' }
+        return { message: 'Database Update Failed: ' + dbError.message }
     }
 
     revalidatePath('/dashboard/account')
+    revalidatePath('/', 'layout')
     return { message: 'Success', avatarUrl: publicUrl }
 }

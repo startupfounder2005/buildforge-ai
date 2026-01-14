@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label'
 import { NewDocumentWizard } from './NewDocumentWizard'
 import { useRouter, usePathname } from 'next/navigation'
-import { Plus, Wand2 } from 'lucide-react'
+import { Plus, Wand2, Building2 } from 'lucide-react'
 
 interface GenerateDocumentGlobalDialogProps {
     projects: { id: string, name: string }[]
@@ -79,27 +79,47 @@ export function GenerateDocumentGlobalDialog({ projects, userId, customTrigger }
                     </DialogDescription>
                 </DialogHeader>
 
-                {step === 'project_select' && (
-                    <div className="grid gap-4 py-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="project">Project</Label>
-                            <Select value={projectId} onValueChange={setProjectId}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select a project..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {projects.map((p) => (
-                                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                {projects.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-6 gap-4 text-center">
+                        <div className="h-12 w-12 rounded-full bg-zinc-800 flex items-center justify-center">
+                            <Building2 className="h-6 w-6 text-zinc-400" />
                         </div>
-                        <div className="flex justify-end pt-4">
-                            <Button onClick={handleProjectSelect} disabled={!projectId}>
-                                Continue <Wand2 className="ml-2 h-4 w-4" />
-                            </Button>
+                        <div className="space-y-1">
+                            <p className="font-medium text-lg">No Projects Found</p>
+                            <p className="text-sm text-zinc-400 max-w-xs mx-auto">
+                                You need to create a project first before you can generate documents.
+                            </p>
                         </div>
+                        <Button
+                            onClick={() => router.push('/dashboard/projects')}
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                            Create Project
+                        </Button>
                     </div>
+                ) : (
+                    step === 'project_select' && (
+                        <div className="grid gap-4 py-4">
+                            <div className="grid gap-2">
+                                <Label htmlFor="project">Project</Label>
+                                <Select value={projectId} onValueChange={setProjectId}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select a project..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {projects.map((p) => (
+                                            <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex justify-end pt-4">
+                                <Button onClick={handleProjectSelect} disabled={!projectId}>
+                                    Continue <Wand2 className="ml-2 h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
+                    )
                 )}
 
                 {step === 'wizard' && (

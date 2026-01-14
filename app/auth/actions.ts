@@ -53,7 +53,28 @@ export async function signup(formData: FormData) {
     }
 
     revalidatePath('/', 'layout')
-    redirect('/auth/login?message=Check email to continue sign in process')
+    revalidatePath('/', 'layout')
+    redirect(`/auth/verify?email=${encodeURIComponent(email)}`)
+}
+
+export async function verifyOtp(formData: FormData) {
+    const supabase = await createClient()
+
+    const email = formData.get('email') as string
+    const token = formData.get('token') as string
+
+    const { error } = await supabase.auth.verifyOtp({
+        email,
+        token,
+        type: 'signup'
+    })
+
+    if (error) {
+        redirect(`/auth/verify?email=${encodeURIComponent(email)}&error=${error.message}`)
+    }
+
+    revalidatePath('/', 'layout')
+    redirect('/dashboard')
 }
 
 export async function signout() {

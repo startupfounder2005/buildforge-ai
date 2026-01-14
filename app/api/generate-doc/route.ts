@@ -14,6 +14,36 @@ export async function POST(req: Request) {
 
         if (!user) {
             console.warn("Unauthorized access to generate-doc")
+            return NextResponse.json({ message: 'Unauthorized' }, { status: 401 })
+        }
+
+        // --- Check Subscription & Rate Limits ---
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('subscription_tier')
+            .eq('id', user.id)
+            .single()
+
+        const isPro = profile?.subscription_tier === 'pro'
+
+        if (!isPro) {
+            // Check usage for this month
+            const startOfMonth = new Date()
+            startOfMonth.setDate(1)
+            startOfMonth.setHours(0, 0, 0, 0)
+
+            const { count, error: countError } = await supabase
+                .from('documents')
+                .select('*', { count: 'exact', head: true })
+                .eq('user_id', user.id)
+                .gte('created_at', startOfMonth.toISOString())
+
+            if (count !== null && count >= 5) {
+                return NextResponse.json({
+                    message: 'Free Plan Limit Reached (5 Docs/Month). Upgrade to Pro for unlimited generation.',
+                    limitReached: true
+                }, { status: 403 })
+            }
         }
 
         const body = await req.json()
@@ -115,6 +145,39 @@ export async function POST(req: Request) {
                 },
                 preventative_measures: preventativeMeasures
             }
+        } else if (category === 'contract' || category === 'subcontractor_agreement') {
+            documentData = {
+                category: 'contract',
+                type: 'SUBCONTRACTOR AGREEMENT',
+                title: title.toUpperCase(),
+                agreement_number: `SA-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+                date_created: today,
+                project_info: {
+                    name: title,
+                    address: address,
+                    city: jurisdiction ? jurisdiction.split(',')[0].trim() : '',
+                    state: jurisdiction && jurisdiction.includes(',') ? jurisdiction.split(',')[1].trim() : ''
+                },
+                owner_info: {
+                    name: ownerName,
+                    address: ownerAddress || 'Address on File',
+                    phone: ownerPhone
+                },
+                contractor_info: {
+                    name: contractorName,
+                    address: contractorAddress || 'Address on File',
+                    license: contractorLicense
+                },
+                scope_of_work: scope,
+                payment_terms: {
+                    amount: estimatedCost || '0.00',
+                    schedule: 'Progress payments upon milestone completion.'
+                },
+                timeline: {
+                    start: startDate,
+                    completion: completionDate
+                }
+            }
         } else {
             // Fee Calculation Logic
             const costVal = parseFloat((estimatedCost || "0").toString().replace(/[^0-9.]/g, '')) || 0
@@ -156,7 +219,8 @@ export async function POST(req: Request) {
         }
 
         // --- 3. Generate PDF ---
-        const pdfBytes = await generateLegalPDF(documentData, true)
+        // If NOT Pro, then it IS a Draft (Watermarked)
+        const pdfBytes = await generateLegalPDF(documentData, !isPro)
         const base64Pdf = Buffer.from(pdfBytes).toString('base64')
 
         // --- 4. Save to Database ---

@@ -197,7 +197,7 @@ export function ProjectDetailsClient({ project, documents, latestDocs, userId, i
                             </div>
 
                             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                                <Card className="col-span-4">
+                                <Card className="col-span-4 h-full">
                                     <CardHeader>
                                         <CardTitle>Overview</CardTitle>
                                         <CardDescription>
@@ -206,6 +206,12 @@ export function ProjectDetailsClient({ project, documents, latestDocs, userId, i
                                     </CardHeader>
                                     <CardContent className="pl-6">
                                         <div className="space-y-8">
+                                            {project.description && (
+                                                <div className="bg-white/5 p-4 rounded-lg border border-white/10">
+                                                    <h4 className="text-sm font-medium text-muted-foreground mb-1">Description</h4>
+                                                    <p className="text-sm text-zinc-300 leading-relaxed break-all whitespace-pre-wrap">{project.description}</p>
+                                                </div>
+                                            )}
                                             <div className="flex items-center justify-between">
                                                 <div className="space-y-1">
                                                     <p className="text-sm font-medium text-muted-foreground">Completion Status</p>
@@ -264,44 +270,44 @@ export function ProjectDetailsClient({ project, documents, latestDocs, userId, i
                                         </div>
                                     </CardContent>
                                 </Card>
-                                <Card className="col-span-3">
+                                <Card className="col-span-3 h-full flex flex-col">
                                     <CardHeader>
                                         <CardTitle>Latest Documents</CardTitle>
                                         <CardDescription>
                                             Recent generated files
                                         </CardDescription>
                                     </CardHeader>
-                                    <CardContent>
-                                        <div className="space-y-4">
+                                    <CardContent className="flex-1 flex flex-col">
+                                        <div className="flex-1 flex flex-col">
                                             {latestDocs.length === 0 ? (
-                                                <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
+                                                <div className="flex flex-col items-center justify-center flex-1 text-center text-muted-foreground min-h-[200px]">
                                                     <FileText className="h-8 w-8 mb-2 opacity-50" />
                                                     <p className="text-sm">No documents generated yet.</p>
                                                     <p className="text-xs">Create your first permit or bid below.</p>
                                                 </div>
                                             ) : (
-                                                latestDocs.map((doc) => (
-                                                    <div key={doc.id} className="flex items-start">
-                                                        <FileText className="mr-2 h-4 w-4 text-blue-500 mt-1" />
-                                                        <div className="ml-2 space-y-1 w-full min-w-0">
-                                                            <p className="text-sm font-medium leading-none truncate">{doc.title}</p>
-                                                            <p className="text-xs text-muted-foreground capitalize">{doc.type}</p>
+                                                <div className="space-y-4">
+                                                    {latestDocs.map((doc) => (
+                                                        <div key={doc.id} className="flex items-start">
+                                                            <FileText className="mr-2 h-4 w-4 text-blue-500 mt-1 uppercase" />
+                                                            <div className="ml-2 space-y-1 w-full min-w-0">
+                                                                <p className="text-sm font-medium leading-none truncate">{doc.title}</p>
+                                                                <p className="text-xs text-muted-foreground capitalize">{doc.type}</p>
+                                                            </div>
+                                                            <div className="ml-auto font-medium text-xs text-muted-foreground whitespace-nowrap pl-2">
+                                                                {formatDistanceToNow(new Date(doc.created_at))} ago
+                                                            </div>
                                                         </div>
-                                                        <div className="ml-auto font-medium text-xs text-muted-foreground whitespace-nowrap pl-2">
-                                                            {formatDistanceToNow(new Date(doc.created_at))} ago
-                                                        </div>
+                                                    ))}
+                                                    <div className="pt-2">
+                                                        <Button
+                                                            variant="link"
+                                                            className="text-sm text-blue-500 hover:underline p-0 h-auto"
+                                                            onClick={() => setActiveTab('documents')}
+                                                        >
+                                                            View all
+                                                        </Button>
                                                     </div>
-                                                ))
-                                            )}
-                                            {latestDocs.length > 0 && (
-                                                <div className="pt-2">
-                                                    <Button
-                                                        variant="link"
-                                                        className="text-sm text-blue-500 hover:underline p-0 h-auto"
-                                                        onClick={() => setActiveTab('documents')}
-                                                    >
-                                                        View all
-                                                    </Button>
                                                 </div>
                                             )}
                                         </div>

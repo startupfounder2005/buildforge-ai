@@ -3,11 +3,38 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Check, CreditCard, Download, ExternalLink, Zap } from "lucide-react"
+import { Check, CreditCard, Download, ExternalLink, Zap, Loader2 } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { createCheckoutSession, createCustomerPortal } from "@/app/dashboard/account/billing/actions"
+import { useState } from "react"
+import { toast } from "sonner"
+
+// Replace with your actual Stripe Price ID for the Pro Plan
+const PRO_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_PRO || "price_1Q..."
 
 export function BillingTab({ plan = 'free' }: { plan?: string }) {
     const isPro = plan === 'pro'
+    const [isLoading, setIsLoading] = useState(false)
+
+    const handleUpgrade = async () => {
+        setIsLoading(true)
+        try {
+            await createCheckoutSession(PRO_PRICE_ID)
+        } catch (error: any) {
+            toast.error(error.message || "Failed to start checkout")
+            setIsLoading(false)
+        }
+    }
+
+    const handleManage = async () => {
+        setIsLoading(true)
+        try {
+            await createCustomerPortal()
+        } catch (error: any) {
+            toast.error(error.message || "Failed to open billing portal")
+            setIsLoading(false)
+        }
+    }
 
     return (
         <div className="space-y-8">
@@ -26,7 +53,7 @@ export function BillingTab({ plan = 'free' }: { plan?: string }) {
                     </CardHeader>
                     <CardContent className="flex-1">
                         <ul className="space-y-3">
-                            {['5 Documents / Month', 'Basic PDF Generation', 'Community Support', 'Watermarked Documents'].map((feat, i) => (
+                            {['1 Active Project', '5 Documents / Month', 'Basic PDF Generation', 'Community Support', 'Watermarked Documents'].map((feat, i) => (
                                 <li key={i} className="flex items-center gap-2 text-sm">
                                     <Check className="h-4 w-4 text-green-500" />
                                     {feat}
@@ -35,7 +62,12 @@ export function BillingTab({ plan = 'free' }: { plan?: string }) {
                         </ul>
                     </CardContent>
                     <CardFooter>
-                        <Button className="w-full" variant="outline" disabled={!isPro}>
+                        <Button
+                            className="w-full"
+                            variant="outline"
+                            disabled={!isPro || isLoading}
+                            onClick={handleManage}
+                        >
                             {!isPro ? "Your Current Plan" : "Downgrade to Free"}
                         </Button>
                     </CardFooter>
@@ -63,12 +95,12 @@ export function BillingTab({ plan = 'free' }: { plan?: string }) {
                     <CardContent className="flex-1">
                         <ul className="space-y-3">
                             {[
+                                'Unlimited Projects',
                                 'Unlimited Documents',
                                 'AI Predictions & Risk Analysis',
                                 'Priority Email Support',
                                 'White-label PDFs (No Watermark)',
-                                'Custom Branding',
-                                'Export to Procore/AutoCAD'
+                                'Custom Branding'
                             ].map((feat, i) => (
                                 <li key={i} className="flex items-center gap-2 text-sm">
                                     <Check className="h-4 w-4 text-indigo-500" />
@@ -78,43 +110,17 @@ export function BillingTab({ plan = 'free' }: { plan?: string }) {
                         </ul>
                     </CardContent>
                     <CardFooter>
-                        <Button className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border-0 shadow-lg shadow-indigo-500/20">
+                        <Button
+                            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border-0 shadow-lg shadow-indigo-500/20"
+                            onClick={isPro ? handleManage : handleUpgrade}
+                            disabled={isLoading}
+                        >
+                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {isPro ? "Manage Subscription" : "Upgrade to Pro"}
                         </Button>
                     </CardFooter>
                 </Card>
             </div>
-
-            {/* Payment Method */}
-            <Card>
-                <CardHeader>
-                    <CardTitle>Payment Method</CardTitle>
-                    <CardDescription>Manage your payment details and billing address.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/30 transition-colors">
-                        <div className="flex items-center gap-4">
-                            <div className="h-10 w-14 bg-slate-100 rounded border flex items-center justify-center">
-                                {/* Simple Visa placeholder logo */}
-                                <div className="font-bold text-blue-800 italic text-xs">VISA</div>
-                            </div>
-                            <div>
-                                <div className="font-medium flex items-center gap-2">
-                                    Visa ending in 4242
-                                    <Badge variant="outline" className="text-[10px] h-5 px-1.5">Default</Badge>
-                                </div>
-                                <p className="text-sm text-muted-foreground">Expires 12/2026</p>
-                            </div>
-                        </div>
-                        <Button variant="ghost" size="sm">Edit</Button>
-                    </div>
-                </CardContent>
-                <CardFooter className="bg-muted/20 border-t px-6 py-4">
-                    <Button variant="outline" size="sm">
-                        <CreditCard className="mr-2 h-4 w-4" /> Add Payment Method
-                    </Button>
-                </CardFooter>
-            </Card>
 
             {/* Invoices */}
             <Card>
@@ -134,27 +140,11 @@ export function BillingTab({ plan = 'free' }: { plan?: string }) {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {[
-                                { id: 'INV-003', status: 'Paid', amount: '€49.00', date: 'Oct 01, 2026' },
-                                { id: 'INV-002', status: 'Paid', amount: '€49.00', date: 'Sep 01, 2026' },
-                                { id: 'INV-001', status: 'Paid', amount: '€49.00', date: 'Aug 01, 2026' },
-                            ].map((inv) => (
-                                <TableRow key={inv.id}>
-                                    <TableCell className="font-medium">{inv.id}</TableCell>
-                                    <TableCell>
-                                        <Badge variant="outline" className="text-green-600 bg-green-500/10 border-green-500/20">
-                                            {inv.status}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>{inv.amount}</TableCell>
-                                    <TableCell>{inv.date}</TableCell>
-                                    <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                                            <Download className="h-4 w-4 text-muted-foreground" />
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
+                            <TableRow>
+                                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                                    Invoices are managed directly via the <Button variant="link" className="h-auto p-0" onClick={handleManage}>Billing Portal</Button>.
+                                </TableCell>
+                            </TableRow>
                         </TableBody>
                     </Table>
                 </CardContent>

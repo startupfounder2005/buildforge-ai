@@ -38,7 +38,29 @@ export default async function DashboardPage() {
 
     // Stats Calculation
     const activeProjectsCount = allProjects.filter(p => p.status === 'active').length
-    const totalDocsCount = allDocs.length // Or usage_docs_this_month if we prefer strict monthly usage
+    const totalDocsCount = allDocs.length // Total lifetime docs
+
+    // Monthly Calculation for "Documents Generated" change
+    const currentDate = new Date()
+    const thisMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
+    const lastMonthStart = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1)
+    const lastMonthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0, 23, 59, 59, 999)
+
+    const thisMonthDocs = allDocs.filter(d => new Date(d.created_at) >= thisMonthStart).length
+    const lastMonthDocs = allDocs.filter(d => {
+        const dDate = new Date(d.created_at)
+        return dDate >= lastMonthStart && dDate <= lastMonthEnd
+    }).length
+
+    let docsChangePercentage = 0
+    let isNewUser = false
+
+    if (lastMonthDocs > 0) {
+        docsChangePercentage = Math.round(((thisMonthDocs - lastMonthDocs) / lastMonthDocs) * 100)
+    } else if (thisMonthDocs > 0) {
+        // First month with activity
+        isNewUser = true
+    }
 
     // Activity Feed Construction
     // Combine projects and docs, sort by date, take top 5
@@ -62,7 +84,7 @@ export default async function DashboardPage() {
 
     // Upcoming Deadlines
     // Filter projects with future due_date
-    const now = new Date()
+    const now = new Date() // Keeping this 'now' as it is used below, and 'currentDate' is used above
     const upcomingDeadlines = allProjects
         .filter(p => p.due_date && new Date(p.due_date) > now && p.status !== 'completed')
         .sort((a, b) => new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime())
@@ -93,8 +115,10 @@ export default async function DashboardPage() {
 
             <OverviewStats
                 projectsCount={activeProjectsCount}
-                documentsCount={totalDocsCount}
+                documentsCount={thisMonthDocs}
                 subscriptionTier={profile?.subscription_tier || 'free'}
+                docsChangePercentage={docsChangePercentage}
+                isNewUser={isNewUser}
             />
 
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-7">

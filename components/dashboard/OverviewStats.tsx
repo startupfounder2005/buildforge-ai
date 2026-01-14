@@ -3,14 +3,17 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Hammer, FileText, CreditCard, ArrowUpRight } from "lucide-react"
 import { motion } from "framer-motion"
+import Link from "next/link"
 
 interface OverviewStatsProps {
     projectsCount: number
     documentsCount: number
     subscriptionTier: string
+    docsChangePercentage?: number
+    isNewUser?: boolean
 }
 
-export function OverviewStats({ projectsCount, documentsCount, subscriptionTier }: OverviewStatsProps) {
+export function OverviewStats({ projectsCount, documentsCount, subscriptionTier, docsChangePercentage = 0, isNewUser = false }: OverviewStatsProps) {
     const container = {
         hidden: { opacity: 0 },
         show: {
@@ -61,7 +64,10 @@ export function OverviewStats({ projectsCount, documentsCount, subscriptionTier 
                     <CardContent>
                         <div className="text-2xl font-bold">{documentsCount}</div>
                         <p className="text-xs text-muted-foreground">
-                            +12% from last month
+                            {isNewUser
+                                ? "No previous month data"
+                                : `${docsChangePercentage > 0 ? '+' : ''}${docsChangePercentage}% from last month`
+                            }
                         </p>
                     </CardContent>
                 </Card>
@@ -78,8 +84,14 @@ export function OverviewStats({ projectsCount, documentsCount, subscriptionTier 
                     <CardContent>
                         <div className="text-2xl font-bold capitalize">{subscriptionTier}</div>
                         <p className="text-xs text-muted-foreground flex items-center gap-1">
-                            {subscriptionTier === 'free' ? 'Upgrade to Pro' : 'Active Subscription'}
-                            {subscriptionTier === 'free' && <ArrowUpRight className="h-3 w-3 text-primary" />}
+                            {subscriptionTier === 'free' ? (
+                                <Link href="/dashboard/account?tab=billing" className="flex items-center gap-1 hover:underline group">
+                                    Upgrade to Pro
+                                    <ArrowUpRight className="h-3 w-3 text-primary group-hover:translate-x-0.5 transition-transform" />
+                                </Link>
+                            ) : (
+                                'Active Subscription'
+                            )}
                         </p>
                     </CardContent>
                 </Card>

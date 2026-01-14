@@ -17,9 +17,10 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { UpgradeDialog } from '@/components/shared/UpgradeDialog'
 import {
     Search, Filter, FileText, MoreHorizontal, Download, Eye, Trash2,
-    Grid, List, Loader2, ArrowUpDown, Info, ShieldCheck, Building2
+    Grid, List, Loader2, ArrowUpDown, Info, ShieldCheck, Building2, Upload, Plus
 } from "lucide-react"
 import { format } from "date-fns"
 import { toast } from "sonner"
@@ -35,9 +36,10 @@ interface DocumentsClientProps {
     initialDocuments: any[]
     projects: { id: string, name: string }[]
     userId: string
+    plan: string
 }
 
-export function DocumentsClient({ initialDocuments, projects, userId }: DocumentsClientProps) {
+export function DocumentsClient({ initialDocuments, projects, userId, plan }: DocumentsClientProps) {
     const [documents, setDocuments] = useState(initialDocuments)
     const [viewMode, setViewMode] = useState<'grid' | 'table'>('table')
     const [searchQuery, setSearchQuery] = useState('')
@@ -46,6 +48,10 @@ export function DocumentsClient({ initialDocuments, projects, userId }: Document
     const [selectedDocIds, setSelectedDocIds] = useState<string[]>([])
     const [loading, setLoading] = useState(false)
     const [deletingId, setDeletingId] = useState<string | null>(null)
+    const [upgradeOpen, setUpgradeOpen] = useState(false)
+
+    const isFree = plan === 'free'
+    const docsLimitReached = isFree && documents.length >= 5
 
     // Dialogs & Sheets
     const [detailsDoc, setDetailsDoc] = useState<any | null>(null)
@@ -382,7 +388,7 @@ export function DocumentsClient({ initialDocuments, projects, userId }: Document
                             variant="ghost"
                             size="icon"
                             className={`h-8 w-8 rounded-sm transition-all ${viewMode === 'table'
-                                ? 'bg-amber-400 text-zinc-900 shadow-sm hover:bg-amber-500'
+                                ? 'bg-[#7C3AED] text-white shadow-sm hover:bg-[#6D28D9]'
                                 : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
                                 }`}
                             onClick={() => setViewMode('table')}
@@ -393,7 +399,7 @@ export function DocumentsClient({ initialDocuments, projects, userId }: Document
                             variant="ghost"
                             size="icon"
                             className={`h-8 w-8 rounded-sm transition-all ${viewMode === 'grid'
-                                ? 'bg-amber-400 text-zinc-900 shadow-sm hover:bg-amber-500'
+                                ? 'bg-[#7C3AED] text-white shadow-sm hover:bg-[#6D28D9]'
                                 : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
                                 }`}
                             onClick={() => setViewMode('grid')}
@@ -402,9 +408,35 @@ export function DocumentsClient({ initialDocuments, projects, userId }: Document
                         </Button>
                     </div>
 
-                    <ImportDocumentGlobalDialog projects={projects} userId={userId} />
+                    {docsLimitReached ? (
+                        <Button
+                            className="bg-blue-600 hover:bg-blue-700 text-white gap-2 shadow-lg shadow-blue-900/20"
+                            onClick={() => setUpgradeOpen(true)}
+                        >
+                            <Upload className="h-4 w-4" />
+                            Import Document
+                        </Button>
+                    ) : (
+                        <ImportDocumentGlobalDialog projects={projects} userId={userId} />
+                    )}
 
-                    <GenerateDocumentGlobalDialog projects={projects} userId={userId} />
+                    {docsLimitReached ? (
+                        <Button
+                            variant="outline"
+                            className="gap-2 border-dashed border-zinc-700 hover:bg-zinc-900 hover:text-blue-500 hover:border-blue-500/50"
+                            onClick={() => setUpgradeOpen(true)}
+                        >
+                            <Plus className="h-4 w-4" /> Generate New
+                        </Button>
+                    ) : (
+                        <GenerateDocumentGlobalDialog projects={projects} userId={userId} />
+                    )}
+
+                    <UpgradeDialog
+                        open={upgradeOpen}
+                        onOpenChange={setUpgradeOpen}
+                        limitType="document"
+                    />
                 </div>
             </div>
 

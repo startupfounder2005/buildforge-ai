@@ -46,19 +46,26 @@ import { Button } from "@/components/ui/button"
 import { deleteProject } from '@/app/dashboard/projects/actions'
 import { toast } from "sonner"
 
+import { UpgradeDialog } from '@/components/shared/UpgradeDialog'
+
 interface ProjectsClientWrapperProps {
     initialProjects: any[]
+    plan: string
 }
 
-export function ProjectsClientWrapper({ initialProjects }: ProjectsClientWrapperProps) {
+export function ProjectsClientWrapper({ initialProjects, plan }: ProjectsClientWrapperProps) {
     const [search, setSearch] = useState('')
     const [statusFilter, setStatusFilter] = useState('all')
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
     const [projectToDelete, setProjectToDelete] = useState<string | null>(null)
+    const [upgradeOpen, setUpgradeOpen] = useState(false)
 
     // Edit State
     const [editDialogOpen, setEditDialogOpen] = useState(false)
     const [projectToEdit, setProjectToEdit] = useState<any>(null)
+
+    const isFree = plan === 'free'
+    const projectLimitReached = isFree && initialProjects.length >= 1
 
     const handleDeleteClick = (id: string) => {
         setProjectToDelete(id)
@@ -99,12 +106,27 @@ export function ProjectsClientWrapper({ initialProjects }: ProjectsClientWrapper
                     <p className="text-muted-foreground">Manage your construction sites</p>
                 </div>
                 {/* Create Project Dialog */}
-                <ProjectDialog>
-                    <Button className="hover:bg-blue-600 transition-colors">
+                {projectLimitReached ? (
+                    <Button
+                        onClick={() => setUpgradeOpen(true)}
+                        className="hover:bg-blue-600 transition-colors"
+                    >
                         <Plus className="mr-2 h-4 w-4" /> New Project
                     </Button>
-                </ProjectDialog>
+                ) : (
+                    <ProjectDialog>
+                        <Button className="hover:bg-blue-600 transition-colors">
+                            <Plus className="mr-2 h-4 w-4" /> New Project
+                        </Button>
+                    </ProjectDialog>
+                )}
             </div>
+
+            <UpgradeDialog
+                open={upgradeOpen}
+                onOpenChange={setUpgradeOpen}
+                limitType="project"
+            />
 
             <div className="grid gap-6 md:grid-cols-3">
                 <ProjectStats projects={initialProjects} />

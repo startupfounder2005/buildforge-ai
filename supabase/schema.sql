@@ -12,6 +12,7 @@ create table if not exists public.profiles (
   phone_verified boolean default false,
   bio text,
   avatar_url text,
+  stripe_customer_id text,
   subscription_tier text default 'free', -- 'free', 'pro'
   usage_docs_this_month int default 0,
   created_at timestamptz default now(),
@@ -107,6 +108,7 @@ create table if not exists public.documents (
   title text not null,
   content_json jsonb,
   pdf_url text,
+  file_size bigint default 0,
   created_at timestamptz default now()
 );
 

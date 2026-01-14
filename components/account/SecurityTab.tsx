@@ -14,6 +14,8 @@ import zxcvbn from "zxcvbn"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
+import { createClient } from "@/lib/supabase/client"
+
 export function SecurityTab() {
     const [showCurrentPass, setShowCurrentPass] = useState(false)
     const [showNewPass, setShowNewPass] = useState(false)
@@ -23,6 +25,7 @@ export function SecurityTab() {
     const [newPass, setNewPass] = useState("")
     const [confirmPass, setConfirmPass] = useState("")
     const [loading, setLoading] = useState(false)
+    const [error, setError] = useState("")
 
     // Strength Meter
     const strength = zxcvbn(newPass)
@@ -32,25 +35,78 @@ export function SecurityTab() {
 
     // Delete Modal
     const [deleteOpen, setDeleteOpen] = useState(false)
+    const supabase = createClient()
 
     const handleUpdatePassword = async (e: React.FormEvent) => {
         e.preventDefault()
+        setError("")
+
         if (newPass !== confirmPass) {
-            toast.error("Passwords do not match")
+            setError("Passwords do not match")
             return
         }
-        if (strength.score < 2) {
-            toast.error("Password is too weak")
+        if (strength.score < 3) { // Require at least "Fair" (score 2 is Fair, wait, array index 2 is Fair. Score 0-4. score 2 is Fair. Let's require >= 2 or 3? Plan said "what it should". Let's say score < 3 is too weak if we want Strong. Let's stick to >=2 for MVP or follow user prompt "not long enough or doesnt contain what it should". zxcvbn handles complexity. Let's require Score >= 3 (Strong) for good security, or just rely on Supabase defaults? Supabase usually requires 6 chars. 
+            // Let's go with strength.score < 2 (0=Very Weak, 1=Weak). So 2 (Fair) is min acceptable.
+            // Actually user said "red error text saying... if the new password is not long enough".
+            // Let's use custom validation + zxcvbn.
+        }
+
+        if (newPass.length < 6) {
+            setError("Password must be at least 6 characters")
             return
         }
+
+        if (!/\d/.test(newPass)) {
+            setError("Password must contain at least one number")
+            return
+        }
+
+        if (!/[!@#$%^&*(),.?":{}|<>]/.test(newPass)) {
+            setError("Password must contain at least one special character")
+            return
+        }
+
         setLoading(true)
-        // Simulate API
-        await new Promise(resolve => setTimeout(resolve, 1500))
-        setLoading(false)
-        setCurrentPass("")
-        setNewPass("")
-        setConfirmPass("")
-        toast.success("Password updated successfully")
+
+        try {
+            // 1. Verify current password by signing in (re-auth)
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user || !user.email) {
+                setError("User session invalid. Please log in again.")
+                setLoading(false)
+                return
+            }
+
+            const { error: signInError } = await supabase.auth.signInWithPassword({
+                email: user.email,
+                password: currentPass
+            })
+
+            if (signInError) {
+                setError("Current password is incorrect")
+                setLoading(false)
+                return
+            }
+
+            // 2. Update password
+            const { error: updateError } = await supabase.auth.updateUser({
+                password: newPass
+            })
+
+            if (updateError) {
+                setError(updateError.message)
+            } else {
+                toast.success("Password updated successfully")
+                setCurrentPass("")
+                setNewPass("")
+                setConfirmPass("")
+            }
+        } catch (err) {
+            setError("An unexpected error occurred")
+            console.error(err)
+        } finally {
+            setLoading(false)
+        }
     }
 
     const handleDeleteAccount = () => {
@@ -77,6 +133,7 @@ export function SecurityTab() {
                                     type={showCurrentPass ? "text" : "password"}
                                     value={currentPass}
                                     onChange={(e) => setCurrentPass(e.target.value)}
+                                    className={error && error === "Current password is incorrect" ? "border-red-500" : ""}
                                 />
                                 <Button
                                     type="button" variant="ghost" size="icon"
@@ -129,8 +186,17 @@ export function SecurityTab() {
                                 type="password"
                                 value={confirmPass}
                                 onChange={(e) => setConfirmPass(e.target.value)}
+                                className={newPass && confirmPass && newPass !== confirmPass ? "border-red-500" : ""}
                             />
                         </div>
+
+                        {error && (
+                            <div className="flex items-center gap-2 p-3 text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded-md">
+                                <AlertTitle className="hidden">Error</AlertTitle>  {/* Keep AlertTitle for semantics if using Alert, but using simple div here */}
+                                <Shield className="h-4 w-4" />
+                                <span>{error}</span>
+                            </div>
+                        )}
                     </form>
                 </CardContent>
                 <CardFooter className="border-t px-6 py-4">

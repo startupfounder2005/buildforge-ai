@@ -33,6 +33,17 @@ export default async function DashboardLayout({
         redirect('/auth/login')
     }
 
+    // Fetch Profile for Avatar
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('avatar_url, full_name')
+        .eq('id', user.id)
+        .single()
+
+    const initial = profile?.full_name
+        ? profile.full_name.charAt(0).toUpperCase()
+        : user.email?.charAt(0).toUpperCase() || 'U'
+
     return (
         <SidebarProvider className="h-screen w-full overflow-hidden">
             <AppSidebar />
@@ -70,9 +81,9 @@ export default async function DashboardLayout({
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                                     <Avatar className="h-8 w-8">
-                                        <AvatarImage src="/avatars/01.png" alt="@user" />
+                                        <AvatarImage src={profile?.avatar_url || ''} alt="@user" className="object-cover" />
                                         <AvatarFallback className="bg-primary text-primary-foreground">
-                                            {user.email?.charAt(0).toUpperCase()}
+                                            {initial}
                                         </AvatarFallback>
                                     </Avatar>
                                 </Button>
@@ -80,7 +91,7 @@ export default async function DashboardLayout({
                             <DropdownMenuContent className="w-56" align="end" forceMount>
                                 <DropdownMenuLabel className="font-normal">
                                     <div className="flex flex-col space-y-1">
-                                        <p className="text-sm font-medium leading-none">User</p>
+                                        <p className="text-sm font-medium leading-none">{profile?.full_name || 'User'}</p>
                                         <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
                                     </div>
                                 </DropdownMenuLabel>

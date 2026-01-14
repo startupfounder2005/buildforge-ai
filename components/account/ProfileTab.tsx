@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useCallback, useRef, useEffect, useTransition } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -94,6 +95,7 @@ interface UserProfile {
     phone_verified?: boolean;
     avatar_url: string | null;
     bio?: string | null;
+    subscription_tier?: string;
 }
 
 export function ProfileTab({ user: initialUser }: { user: UserProfile }) {
@@ -102,6 +104,7 @@ export function ProfileTab({ user: initialUser }: { user: UserProfile }) {
     const [isEditing, setIsEditing] = useState(false)
     const [isPending, startTransition] = useTransition()
     const supabase = createClient()
+    const router = useRouter()
 
     // Email Dialog State
     const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false)
@@ -134,6 +137,11 @@ export function ProfileTab({ user: initialUser }: { user: UserProfile }) {
         }
         getAuthUser()
     }, [supabase])
+
+    // Sync state with prop updates
+    useEffect(() => {
+        setUser(initialUser)
+    }, [initialUser])
 
     // Realtime Subscription
     useEffect(() => {
@@ -222,6 +230,7 @@ export function ProfileTab({ user: initialUser }: { user: UserProfile }) {
                     setTimeout(async () => {
                         const { data: { user } } = await supabase.auth.getUser()
                         setAuthUser(user)
+                        router.refresh() // Refresh layout to sync everything
                     }, 1000)
 
                 } else {
@@ -336,6 +345,7 @@ export function ProfileTab({ user: initialUser }: { user: UserProfile }) {
                 toast.success("Profile photo updated")
                 setIsCropOpen(false)
                 setCropImage(null)
+                router.refresh()
             } else {
                 toast.error(result.message)
             }
@@ -356,12 +366,12 @@ export function ProfileTab({ user: initialUser }: { user: UserProfile }) {
         : 'U'
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
             {/* Left Column: Form */}
-            <div className="lg:col-span-2 space-y-6">
-                <form id="profile-form" action={handleSave}>
-                    <Card className="border-border/50 shadow-sm">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-6">
+            <div className="lg:col-span-2 space-y-6 h-full">
+                <form id="profile-form" action={handleSave} className="h-full">
+                    <Card className="border-border/50 shadow-sm h-full flex flex-col">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-6 shrink-0">
                             <div className="space-y-1.5">
                                 <CardTitle className="text-xl">Personal Information</CardTitle>
                                 <CardDescription>Manage your public profile and contact details.</CardDescription>
@@ -379,14 +389,14 @@ export function ProfileTab({ user: initialUser }: { user: UserProfile }) {
                                         e.preventDefault()
                                         setIsEditing(false)
                                     }} disabled={isPending}>Cancel</Button>
-                                    <Button type="submit" className="gap-2 bg-green-600 hover:bg-green-700 text-white" disabled={isPending}>
+                                    <Button type="submit" className="gap-2 bg-[#0047AB] hover:bg-[#0055CC] text-white" disabled={isPending}>
                                         {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                                         Save Changes
                                     </Button>
                                 </div>
                             )}
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="flex-grow">
                             <div className="space-y-6">
                                 <div className="grid md:grid-cols-2 gap-6">
                                     <div className="space-y-2.5">
@@ -430,13 +440,23 @@ export function ProfileTab({ user: initialUser }: { user: UserProfile }) {
                                     </Label>
 
                                     {isEditing ? (
-                                        <div className="relative group">
-                                            <Input name="email" defaultValue={user?.email || ""} placeholder="you@example.com" className="bg-background/50 pl-10" />
+                                        <div className="flex gap-2 relative group">
+                                            <Input
+                                                name="email"
+                                                defaultValue={user?.email || ""}
+                                                className="bg-background/50 flex-1 pl-10"
+                                                readOnly
+                                                onClick={() => setIsEmailDialogOpen(true)}
+                                            />
                                             <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                            <Button type="button" variant="outline" onClick={() => setIsEmailDialogOpen(true)}>
+                                                Change
+                                            </Button>
                                         </div>
                                     ) : (
-                                        <div className="flex items-center justify-between font-medium px-0.5 py-1.5 border-b border-transparent">
+                                        <div className="flex items-center justify-between rounded-md border border-input bg-muted/50 px-3 py-2 text-sm text-muted-foreground shadow-sm">
                                             <div className="flex items-center gap-2">
+                                                <Mail className="h-4 w-4 text-muted-foreground opacity-70" />
                                                 <span>{user?.email}</span>
                                             </div>
 
@@ -592,8 +612,11 @@ export function ProfileTab({ user: initialUser }: { user: UserProfile }) {
                                                 <Input name="phone_local" value={localPhone} onChange={(e) => setLocalPhone(e.target.value)} placeholder="(555) 000-0000" className="bg-background/50 flex-1" />
                                             </div>
                                         ) : (
-                                            <div className="flex items-center justify-between font-medium px-0.5 py-1.5 border-b border-transparent">
-                                                <span>{user?.phone ? user.phone : <span className="text-muted-foreground italic">No phone added</span>}</span>
+                                            <div className={`flex items-center justify-between rounded-md border text-sm shadow-sm transition-all ${user?.phone && user.phone_verified ? "border-input bg-muted/50 px-3 py-2 text-muted-foreground" : "border-transparent px-0.5 py-1.5"}`}>
+                                                <div className="flex items-center gap-2">
+                                                    <Phone className={`h-4 w-4 ${user?.phone && user.phone_verified ? "text-muted-foreground opacity-70" : "text-muted-foreground"}`} />
+                                                    <span>{user?.phone ? user.phone : <span className="text-muted-foreground italic">No phone added</span>}</span>
+                                                </div>
                                                 {user?.phone && (
                                                     <div className="flex items-center gap-2">
                                                         {user.phone_verified ? (
@@ -693,9 +716,20 @@ export function ProfileTab({ user: initialUser }: { user: UserProfile }) {
                                         <Edit2 className="h-4 w-4" /> Bio
                                     </Label>
                                     {isEditing ? (
-                                        <Textarea name="bio" defaultValue={user?.bio || ""} placeholder="Tell us a bit about yourself..." className="bg-background/50 min-h-[100px]" />
+                                        <div className="relative">
+                                            <Textarea
+                                                name="bio"
+                                                defaultValue={user?.bio || ""}
+                                                placeholder="Tell us a bit about yourself..."
+                                                maxLength={150}
+                                                className="bg-background/50 min-h-[100px] resize-none"
+                                            />
+                                            <div className="absolute bottom-2 right-2 text-xs text-muted-foreground pointer-events-none">
+                                                Max 150 chars
+                                            </div>
+                                        </div>
                                     ) : (
-                                        <div className="text-sm text-muted-foreground leading-relaxed px-0.5 py-1.5 border-b border-transparent min-h-[40px]">
+                                        <div className="text-sm text-muted-foreground leading-relaxed px-0.5 py-1.5 border-b border-transparent min-h-[40px] break-words whitespace-pre-wrap">
                                             {user?.bio || "No bio added yet."}
                                         </div>
                                     )}
@@ -707,14 +741,14 @@ export function ProfileTab({ user: initialUser }: { user: UserProfile }) {
             </div>
 
             {/* Right Column: Preview & Avatar */}
-            <div className="space-y-6 lg:sticky lg:top-8">
-                <Card className="overflow-hidden border-border/50 shadow-lg relative group/card">
-                    <div className="h-32 bg-gradient-to-br from-primary/80 via-primary to-purple-600 relative overflow-hidden">
+            <div className="space-y-6 h-full">
+                <Card className="overflow-hidden border-border/50 shadow-lg relative group/card h-full flex flex-col">
+                    <div className="h-32 bg-gradient-to-br from-primary/80 via-primary to-purple-600 relative overflow-hidden shrink-0">
                         <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-soft-light"></div>
                         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
                     </div>
-                    <CardContent className="pt-0 relative">
-                        <div className="flex flex-col items-center -mt-16">
+                    <CardContent className="pt-0 relative flex-grow flex flex-col items-center justify-between">
+                        <div className="flex flex-col items-center -mt-16 w-full">
                             <motion.div
                                 className="relative group cursor-pointer"
                                 whileHover={{ scale: 1.05 }}
@@ -758,14 +792,20 @@ export function ProfileTab({ user: initialUser }: { user: UserProfile }) {
                                 </p>
 
                                 <div className="pt-3 flex justify-center gap-2">
-                                    <Badge variant="secondary" className="bg-green-500/10 text-green-500 hover:bg-green-500/20 border-green-500/20 transition-colors cursor-default">
-                                        Active Subscription
-                                    </Badge>
+                                    {user.subscription_tier === 'pro' ? (
+                                        <Badge variant="secondary" className="bg-green-500/10 text-green-500 hover:bg-green-500/20 border-green-500/20 transition-colors cursor-default">
+                                            Active Subscription
+                                        </Badge>
+                                    ) : (
+                                        <Badge variant="outline" className="text-muted-foreground border-border bg-muted/50">
+                                            No active subscription
+                                        </Badge>
+                                    )}
                                 </div>
                             </div>
                         </div>
 
-                        <div className="mt-8 space-y-4">
+                        <div className="mt-8 space-y-4 w-full">
                             <div className="space-y-2">
                                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Profile ID</Label>
                                 <div
@@ -821,7 +861,11 @@ export function ProfileTab({ user: initialUser }: { user: UserProfile }) {
                     </div>
                     <DialogFooter>
                         <Button variant="ghost" onClick={() => setIsCropOpen(false)}>Cancel</Button>
-                        <Button onClick={saveCroppedImage} disabled={isUploading}>
+                        <Button
+                            onClick={saveCroppedImage}
+                            disabled={isUploading}
+                            className="bg-[#0047AB] hover:bg-[#0055CC] text-white"
+                        >
                             {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Save Photo
                         </Button>

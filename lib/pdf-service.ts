@@ -53,6 +53,15 @@ interface DocumentData {
         name: string
     }
     preventative_measures?: string[]
+    payment_terms?: {
+        amount: string
+        schedule: string
+    }
+    timeline?: {
+        start?: string
+        completion?: string
+    }
+    agreement_number?: string
 }
 
 export async function generateLegalPDF(data: DocumentData, isDraft: boolean = true): Promise<Uint8Array> {
@@ -233,6 +242,130 @@ export async function generateLegalPDF(data: DocumentData, isDraft: boolean = tr
         page.drawLine({ start: { x: supX, y: sigY }, end: { x: supX + sigW, y: sigY }, thickness: 1 })
         page.drawText("SUPERVISOR REVIEW", { x: supX, y: sigY - 15, size: 8, font: fontRegular })
         page.drawText(data.supervisor_info?.name || "N/A", { x: supX, y: sigY + 5, size: 12, font: fontSerif })
+
+    } else if (data.category === 'contract') {
+        // ==========================================
+        //      SUBCONTRACTOR AGREEMENT LOGIC
+        // ==========================================
+
+        // --- 1. Header & Title ---
+        const drawHeader = (currPage: PDFPage) => {
+            const { width, height } = currPage.getSize()
+            // Hexagon Icon (Small)
+            currPage.drawSvgPath('M 15 0 L 27.5 7.5 L 27.5 22.5 L 15 30 L 2.5 22.5 L 2.5 7.5 Z', {
+                x: margin,
+                y: height - 50,
+                color: rgb(0, 0, 0),
+                scale: 1,
+            })
+
+            drawCenteredText(currPage, "SUBCONTRACTOR AGREEMENT", height - margin, fontBold, 18)
+            drawCenteredText(currPage, `AGREEMENT NO: ${data.agreement_number || 'DRAFT'}`, height - margin - 20, fontRegular, 10, rgb(0.5, 0.5, 0.5))
+
+            // Date Right
+            currPage.drawText(`DATE: ${data.date_created || 'Pending'}`, { x: width - margin - 120, y: height - 50, size: 10, font: fontBold })
+        }
+
+        drawHeader(page)
+        const drawWatermark = (currPage: PDFPage) => {
+            if (!isDraft) return
+            const { height } = currPage.getSize()
+            currPage.drawText("MOCK ONLY - DRAFT", {
+                x: margin, y: height / 2 - 100,
+                size: 80, font: fontBold, color: rgb(1, 0, 0), opacity: 0.1, rotate: degrees(45)
+            })
+        }
+        drawWatermark(page)
+
+        yCursor = height - margin - 60
+
+        // --- 2. Parties Grid ---
+        const colW = (width - 2 * margin) / 2
+
+        // Contractor (Left)
+        drawGridBox(page, margin, yCursor - 90, colW - 10, 90, "CONTRACTOR", [
+            { label: "Company:", value: data.contractor_info?.name || "N/A", xOffset: 5, yOffset: 0 },
+            { label: "Address:", value: data.contractor_info?.address?.substring(0, 30) || "N/A", xOffset: 5, yOffset: 20 },
+            { label: "License:", value: data.contractor_info?.license || "N/A", xOffset: 5, yOffset: 40 }
+        ], fontBold, fontRegular, 10)
+
+        // Subcontractor (Right)
+        drawGridBox(page, margin + colW + 10, yCursor - 90, colW - 10, 90, "SUBCONTRACTOR", [
+            { label: "Name/Company:", value: data.owner_info?.name || "N/A", xOffset: 5, yOffset: 0 }, // In this context ownerName passed as sub from wizard
+            { label: "Address:", value: data.owner_info?.address?.substring(0, 30) || "N/A", xOffset: 5, yOffset: 20 },
+            { label: "Phone:", value: data.owner_info?.phone || "N/A", xOffset: 5, yOffset: 40 }
+        ], fontBold, fontRegular, 10)
+
+        yCursor -= 120
+
+        // --- 3. Agreement Sections ---
+        // Helper to handle pagination
+        const checkPage = (heightNeeded: number) => {
+            if (yCursor - heightNeeded < margin + 40) {
+                page = pdfDoc.addPage([612, 792])
+                drawHeader(page)
+                drawWatermark(page)
+                yCursor = height - margin - 60
+                drawCenteredText(page, "(Agreement Continued)", yCursor + 10, fontRegular, 10)
+            }
+        }
+
+        const drawSectionTitle = (num: string, title: string) => {
+            checkPage(30)
+            page.drawText(`${num}. ${title.toUpperCase()}`, { x: margin, y: yCursor, size: 11, font: fontBold })
+            yCursor -= 18
+        }
+
+        const drawSectionBody = (text: string) => {
+            const lines = wrapText(text, fontRegular, 10, width - 2 * margin)
+            lines.forEach(line => {
+                checkPage(15)
+                page.drawText(line, { x: margin, y: yCursor, size: 10, font: fontRegular })
+                yCursor -= 14
+            })
+            yCursor -= 12 // Paragraph gap
+        }
+
+        // Section 1: Project & Scope
+        drawSectionTitle("1", "Scope of Work")
+        drawSectionBody(`The Subcontractor shall perform the following work at the location: ${data.project_info.address}.`)
+        drawSectionBody(data.scope_of_work || "As detailed in attached plans.")
+
+        // Section 2: Timeline
+        drawSectionTitle("2", "Schedule of Work")
+        drawSectionBody(`Start Date: ${data.timeline?.start || 'TBD'}`)
+        drawSectionBody(`Completion Date: ${data.timeline?.completion || 'TBD'}`)
+        drawSectionBody("Time is of the essence in this Agreement. Subcontractor shall provide sufficient labor and materials to complete the work according to schedule.")
+
+        // Section 3: Payment
+        drawSectionTitle("3", "Contract Price & Payment")
+        drawSectionBody(`Contractor agrees to pay Subcontractor the sum of $${data.payment_terms?.amount || '0.00'} for the satisfactory performance of the work.`)
+        drawSectionBody(`Payment Schedule: ${data.payment_terms?.schedule || 'Net 30'}`)
+
+        // Section 4: Standard Legal
+        drawSectionTitle("4", "Insurance & Indemnity")
+        drawSectionBody("Subcontractor shall maintain General Liability and Workers' Compensation insurance during the term of this Agreement. Subcontractor agrees to indemnify and hold harmless Contractor from any claims arising out of Subcontractor's performance.")
+
+        drawSectionTitle("5", "Termination")
+        drawSectionBody("Contractor may terminate this Agreement at any time for material breach. Subcontractor may terminate if payment is not made according to terms.")
+
+        // --- 4. Signature Block ---
+        checkPage(150)
+        yCursor -= 20
+        page.drawLine({ start: { x: margin, y: yCursor }, end: { x: width - margin, y: yCursor }, thickness: 1 })
+        yCursor -= 40
+
+        const sigY = yCursor
+        // Contractor Sig
+        page.drawText("CONTRACTOR:", { x: margin, y: sigY + 20, size: 8, font: fontBold })
+        page.drawLine({ start: { x: margin, y: sigY }, end: { x: margin + 200, y: sigY }, thickness: 1 })
+        page.drawText(data.contractor_info?.name || "", { x: margin, y: sigY + 5, size: 12, font: fontSerif })
+
+        // Sub Sig
+        const rightX = width - margin - 200
+        page.drawText("SUBCONTRACTOR:", { x: rightX, y: sigY + 20, size: 8, font: fontBold })
+        page.drawLine({ start: { x: rightX, y: sigY }, end: { x: width - margin, y: sigY }, thickness: 1 })
+        page.drawText(data.owner_info?.name || "", { x: rightX, y: sigY + 5, size: 12, font: fontSerif })
 
     } else {
         // ==========================================
@@ -571,14 +704,23 @@ export async function generateLegalPDF(data: DocumentData, isDraft: boolean = tr
     const footerText = "This is an AI-generated mock/simulation for review and preparation purposes only. It has NO legal validity and is NOT an official safety report or permit. It MUST NOT be submitted, used for construction, or relied upon legally. Generated by Obsidian – User assumes all liability."
 
     const pages = pdfDoc.getPages()
-    pages.forEach(p => {
+    pages.forEach((p, i) => {
         const { width } = p.getSize()
         const footerLines = wrapText(footerText, fontRegular, 8, width - 2 * margin)
         // Draw from bottom up or top down? Let's go bottom up from 40
         const footerY = 30 + ((footerLines.length - 1) * 10) / 2 // Center block around original 30 roughly
 
-        footerLines.forEach((line, i) => {
-            drawCenteredText(p, line, footerY - (i * 10), fontRegular, 8, rgb(0.5, 0.5, 0.5))
+        footerLines.forEach((line, j) => {
+            drawCenteredText(p, line, footerY - (j * 10), fontRegular, 8, rgb(0.5, 0.5, 0.5))
+        })
+
+        // Page Number
+        p.drawText(`Page ${i + 1} of ${pages.length}`, {
+            x: width - margin - 60,
+            y: 20,
+            size: 8,
+            font: fontRegular,
+            color: rgb(0.5, 0.5, 0.5)
         })
     })
 

@@ -57,6 +57,7 @@ export function ProjectDialog({ project, open: controlledOpen, onOpenChange: set
     const [month, setMonth] = useState<string>('')
     const [day, setDay] = useState<string>('')
     const [year, setYear] = useState<string>('')
+    const [descLength, setDescLength] = useState(0)
 
     const isControlled = controlledOpen !== undefined
     const open = isControlled ? controlledOpen : internalOpen
@@ -71,10 +72,10 @@ export function ProjectDialog({ project, open: controlledOpen, onOpenChange: set
                 setDay(d.getDate().toString())
                 setYear(d.getFullYear().toString())
             } else {
-                setMonth('')
                 setDay('')
                 setYear('')
             }
+            setDescLength(project.description?.length || 0)
         } else {
             // Reset logic handled generally by component state being distinct instances or manual reset if needed
             // but here we just rely on parent passing null.
@@ -224,15 +225,22 @@ export function ProjectDialog({ project, open: controlledOpen, onOpenChange: set
                         </div>
 
                         {/* Description */}
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="description" className="text-right">Desc</Label>
-                            <Textarea
-                                id="description"
-                                name="description"
-                                defaultValue={project?.description}
-                                placeholder="Brief description..."
-                                className="col-span-3"
-                            />
+                        <div className="grid grid-cols-4 items-start gap-4">
+                            <Label htmlFor="description" className="text-right pt-2">Desc</Label>
+                            <div className="col-span-3 space-y-1">
+                                <Textarea
+                                    id="description"
+                                    name="description"
+                                    defaultValue={project?.description}
+                                    placeholder="Brief description..."
+                                    className="resize-none"
+                                    maxLength={150}
+                                    onChange={(e) => setDescLength(e.target.value.length)}
+                                />
+                                <div className="text-right text-xs text-muted-foreground">
+                                    {descLength}/150
+                                </div>
+                            </div>
                         </div>
 
                         {/* Notes */}

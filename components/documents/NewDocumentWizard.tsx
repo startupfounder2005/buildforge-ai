@@ -92,6 +92,7 @@ export function NewDocumentWizard({ projectId, onSuccess, onCancel }: NewDocumen
     const [step, setStep] = useState(1)
     const [loading, setLoading] = useState(false)
     const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
+    const [showForm, setShowForm] = useState(false)
 
     const { register, control, handleSubmit, trigger, watch, setValue, formState: { errors } } = useForm<FormData>({
         resolver: zodResolver(formSchema),
@@ -116,6 +117,10 @@ export function NewDocumentWizard({ projectId, onSuccess, onCancel }: NewDocumen
 
     // Handle Category Selection
     const handleCategorySelect = (catId: string) => {
+        if (selectedCategory === catId) {
+            // Optional: Deselect if clicking same? No, stickiness is better for "Next" flow.
+            return
+        }
         setSelectedCategory(catId)
         if (catId !== 'permit') {
             // Auto-map non-permit types
@@ -157,17 +162,25 @@ export function NewDocumentWizard({ projectId, onSuccess, onCancel }: NewDocumen
     }
 
     const handleNext = async () => {
+        if (step === 1 && !showForm) {
+            if (!selectedCategory) {
+                toast.error("Please select a document category")
+                return
+            }
+            setShowForm(true)
+            return
+        }
+
         const isValid = await validateStep(step)
         if (isValid) setStep(prev => Math.min(prev + 1, 5))
     }
 
     const handleBack = () => {
-        if (step === 1 && selectedCategory) {
-            setSelectedCategory(null)
-            setValue('type', '')
+        if (step === 1 && showForm) {
+            setShowForm(false)
             return
         }
-        if (step === 1 && !selectedCategory) {
+        if (step === 1 && !showForm) {
             if (onCancel) onSuccess ? onSuccess() : onCancel() // Fallback
             else router.back()
             return
@@ -232,14 +245,16 @@ export function NewDocumentWizard({ projectId, onSuccess, onCancel }: NewDocumen
             <Card className="min-h-[500px] flex flex-col border-muted/60 shadow-sm">
                 <CardHeader>
                     <CardTitle className="text-2xl">
-                        {step === 1 && 'Document Basics'}
+                        {step === 1 && !showForm && 'Document Basics'}
+                        {step === 1 && showForm && 'Project Details'}
                         {step === 2 && (isSafety ? 'Reporter & Supervisor' : 'Parties Involved')}
                         {step === 3 && (isSafety ? 'Incident Context' : 'Project Timeline')}
                         {step === 4 && (isSafety ? 'Incident Details' : 'Valuation & Scope')}
                         {step === 5 && 'Review & Generate'}
                     </CardTitle>
                     <CardDescription>
-                        {step === 1 && (!selectedCategory ? 'Select a document category.' : 'Enter details.')}
+                        {step === 1 && !showForm && 'Select a document category.'}
+                        {step === 1 && showForm && 'Enter basic project information.'}
                         {step === 2 && 'Who is involved?'}
                         {step === 3 && (isSafety ? 'When and where did it happen?' : 'Timeframe for the project.')}
                         {step === 4 && (isSafety ? 'What happened?' : 'Financials and work description.')}
@@ -252,17 +267,18 @@ export function NewDocumentWizard({ projectId, onSuccess, onCancel }: NewDocumen
                             <motion.div key="step1" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="space-y-6">
 
                                 {/* Category Selection View */}
-                                {!selectedCategory && (
+                                {!showForm && (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {docCategories.map((cat) => {
                                             const Icon = cat.icon
+                                            const isSelected = selectedCategory === cat.id
                                             return (
                                                 <div
                                                     key={cat.id}
                                                     onClick={() => handleCategorySelect(cat.id)}
-                                                    className={`cursor-pointer rounded-xl border-2 p-5 transition-all hover:border-primary/50 hover:bg-muted/50 flex items-start gap-4 border-border bg-card`}
+                                                    className={`cursor-pointer rounded-xl border-2 p-5 transition-all hover:border-primary/50 flex items-start gap-4 ${isSelected ? 'border-primary bg-primary/5 shadow-sm' : 'border-border bg-card hover:bg-muted/50'}`}
                                                 >
-                                                    <div className="p-3 rounded-lg bg-primary/10 text-primary">
+                                                    <div className={`p-3 rounded-lg ${isSelected ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary'}`}>
                                                         <Icon className="h-6 w-6" />
                                                     </div>
                                                     <div>
@@ -275,8 +291,8 @@ export function NewDocumentWizard({ projectId, onSuccess, onCancel }: NewDocumen
                                     </div>
                                 )}
 
-                                {/* Details View (If category selected) */}
-                                {selectedCategory && (
+                                {/* Details View (If category selected and Next pressed) */}
+                                {showForm && (
                                     <>
                                         {/* Permit Specific Sub-selection */}
                                         {selectedCategory === 'permit' && (

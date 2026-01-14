@@ -20,10 +20,10 @@ export default function Home() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-6 mt-8">
-          <Button asChild size="lg" className="h-12 px-8 text-base bg-[#0047AB] hover:bg-[#003580] text-white shadow-[0_0_20px_rgba(0,71,171,0.4)] hover:shadow-[0_0_30px_rgba(0,71,171,0.6)] transition-all">
-            <Link href="/dashboard">Get Started</Link>
+          <Button asChild size="lg" className="h-12 px-8 text-base bg-[#0047AB] hover:bg-[#0055CC] text-white transition-all">
+            <Link href="/auth/signup">Get Started</Link>
           </Button>
-          <Button variant="outline" asChild size="lg" className="h-12 px-8 text-base border-white/20 hover:bg-white/10 hover:border-white/40 transition-all backdrop-blur-sm">
+          <Button variant="outline" asChild size="lg" className="h-12 px-8 text-base border-white/20 hover:bg-[#7C3AED] hover:border-[#7C3AED] hover:text-white transition-all backdrop-blur-sm">
             <Link href="/auth/login">Login</Link>
           </Button>
         </div>

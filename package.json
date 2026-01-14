@@ -37,6 +37,7 @@
     "cmdk": "^1.1.1",
     "date-fns": "^4.1.0",
     "file-saver": "^2.0.5",
+    "fontkit": "^2.0.4",
     "framer-motion": "^12.24.12",
     "jspdf": "^4.0.0",
     "jszip": "^3.10.1",

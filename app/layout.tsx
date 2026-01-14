@@ -18,6 +18,8 @@ export const metadata: Metadata = {
 };
 
 import { CursorFixer } from "@/components/ui/cursor-fixer";
+import { InactivityListener } from "@/components/auth/InactivityListener";
+import { Toaster } from "@/components/ui/sonner";
 
 export default function RootLayout({
   children,
@@ -30,7 +32,9 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <CursorFixer />
+        <InactivityListener />
         {children}
+        <Toaster />
       </body>
     </html>
   );

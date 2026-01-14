@@ -1,12 +1,28 @@
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ProfileTab } from "@/components/account/ProfileTab"
-import { BillingTab } from "@/components/account/BillingTab"
-import { UsageTab } from "@/components/account/UsageTab"
-import { SecurityTab } from "@/components/account/SecurityTab"
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
+import { AccountClient } from "@/components/account/AccountClient"
 
-export default async function AccountPage() {
+export const dynamic = 'force-dynamic'
+
+export default async function AccountPage({
+    searchParams,
+}: {
+    searchParams: Promise<{ tab?: string }>
+}) {
+    // Await params/searchParams in Next.js 15+ if needed, though type implies it might be a Promise or standard object depending on version. 
+    // The previous file had it as `{ tab?: string }`, but to be safe and consistent with previous project file which used Promise, I will check.
+    // Actually, looking at the previous file content provided in Step 5216, it was:
+    // export default async function AccountPage({ searchParams }: { searchParams: { tab?: string } }) 
+    // BUT in project page Step 5215:
+    // export default async function ProjectPage({ searchParams }: { searchParams: Promise<{ tab?: string }> })
+    // It seems the user might be on a version were searchParams is a Promise (Next 15).
+    // I will stick to the existing signature if possible or upgrade it if I see errors. 
+    // Given 'app/dashboard/projects/[id]/page.tsx' uses Promise, it is safer to treat it as awaitable or just access properties if they are already resolved.
+    // However, for this replace, I'll stick to what works or standard pattern. Using "await searchParams" is the modern way.
+
+    const params = await searchParams
+    const activeTab = params?.tab || "profile"
+
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -36,56 +52,98 @@ export default async function AccountPage() {
 
     // Usage Calculations
     const isPro = userData.plan === 'pro'
-    const docsUsed = profile?.usage_docs_this_month || 0
-    const docsLimit = isPro ? 100 : 5
 
-    // Mocking storage for now as it's not in DB yet
-    const storageUsed = 0.5
-    const storageLimit = isPro ? 10 : 1
+    // Dynamic Count (Same as API)
+    const startOfMonth = new Date()
+    startOfMonth.setDate(1)
+    startOfMonth.setHours(0, 0, 0, 0)
+
+    const { count: docsCount } = await supabase
+        .from('documents')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .gte('created_at', startOfMonth.toISOString())
+
+    const docsUsed = docsCount || 0
+    // If Pro, we say limit is -1 to indicate Unlimited in UI
+    const docsLimit = isPro ? -1 : 5
+
+    // Projects Statistics
+    const { count: projectsCount } = await supabase
+        .from('projects')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+
+    const projectsUsed = projectsCount || 0
+    const projectsLimit = isPro ? -1 : 1
+
+    // --- Storage Calculations ---
+    const { data: allStorageDocs } = await supabase
+        .from('documents')
+        .select('file_size')
+        .eq('user_id', user.id)
+
+    const totalBytes = allStorageDocs?.reduce((acc, doc) => acc + (doc.file_size || 0), 0) || 0
+    const storageUsed = totalBytes / (1024 * 1024 * 1024) // Convert Bytes to GB
+
+    const storageLimit = isPro ? 100 : 1 // 100GB for Pro, 1GB for Free
+
+    // --- Historical Data Generation ---
+    // Since Supabase doesn't support complex GROUP BY / date_trunc via JS client easily without views/functions,
+    // we will fetch all docs from last 6 months and aggregate in JS.
+
+    // 6 months ago
+    const sixMonthsAgo = new Date()
+    sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 5) // Current + 5 previous
+    sixMonthsAgo.setDate(1)
+    sixMonthsAgo.setHours(0, 0, 0, 0)
+
+    const { data: allDocs } = await supabase
+        .from('documents')
+        .select('created_at')
+        .eq('user_id', user.id)
+        .gte('created_at', sixMonthsAgo.toISOString())
+
+    // Aggregate by Month-Year keys
+    const historyMap = new Map<string, number>()
+
+    // Initialize last 6 months with 0
+    for (let i = 0; i < 6; i++) {
+        const d = new Date()
+        d.setMonth(d.getMonth() - (5 - i))
+        const key = d.toLocaleString('default', { month: 'short' }) // Jan, Feb
+        historyMap.set(key, 0)
+    }
+
+    if (allDocs) {
+        allDocs.forEach(doc => {
+            const date = new Date(doc.created_at)
+            const key = date.toLocaleString('default', { month: 'short' })
+            if (historyMap.has(key)) {
+                historyMap.set(key, (historyMap.get(key) || 0) + 1)
+            }
+        })
+    }
+
+    const monthlyHistory = Array.from(historyMap.entries()).map(([month, count]) => ({ month, count }))
+
 
     const usageStats = {
         docsUsed,
         docsLimit,
+        projectsUsed,
+        projectsLimit,
         storageUsed,
         storageLimit,
-        plan: userData.plan
+        plan: userData.plan,
+        monthlyHistory
     }
 
     return (
-        <div className="container max-w-6xl space-y-8 pb-10">
-            <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold tracking-tight">Account Settings</h1>
-                <p className="text-muted-foreground">Manage your profile updates, subscription plan, usage limits, and security preferences.</p>
-            </div>
-
-            <Tabs defaultValue="profile" className="w-full space-y-6">
-                <TabsList className="grid w-full grid-cols-4 lg:w-[500px] h-11 bg-muted/50 p-1">
-                    <TabsTrigger value="profile" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">Profile</TabsTrigger>
-                    <TabsTrigger value="billing" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">Billing</TabsTrigger>
-                    <TabsTrigger value="usage" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">Usage</TabsTrigger>
-                    <TabsTrigger value="security" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">Security</TabsTrigger>
-                </TabsList>
-
-                {/* PROFILE TAB */}
-                <TabsContent value="profile" className="outline-none animate-in fade-in-50 duration-300">
-                    <ProfileTab user={userData} />
-                </TabsContent>
-
-                {/* BILLING TAB */}
-                <TabsContent value="billing" className="outline-none animate-in fade-in-50 duration-300">
-                    <BillingTab plan={userData.plan} />
-                </TabsContent>
-
-                {/* USAGE TAB */}
-                <TabsContent value="usage" className="outline-none animate-in fade-in-50 duration-300">
-                    <UsageTab usage={usageStats} />
-                </TabsContent>
-
-                {/* SECURITY TAB */}
-                <TabsContent value="security" className="outline-none animate-in fade-in-50 duration-300">
-                    <SecurityTab />
-                </TabsContent>
-            </Tabs>
-        </div>
+        <AccountClient
+            userData={userData}
+            usageStats={usageStats}
+            initialTab={activeTab}
+        />
     )
 }

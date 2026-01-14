@@ -24,6 +24,15 @@ export default async function DocumentsPage() {
         .eq('user_id', user.id)
         .order('name')
 
+    // Fetch Plan
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('subscription_tier')
+        .eq('id', user.id)
+        .single()
+
+    const plan = profile?.subscription_tier || 'free'
+
     return (
         <div className="space-y-6">
             <div>
@@ -35,6 +44,7 @@ export default async function DocumentsPage() {
                 initialDocuments={documents || []}
                 projects={projects || []}
                 userId={user.id}
+                plan={plan}
             />
         </div>
     )

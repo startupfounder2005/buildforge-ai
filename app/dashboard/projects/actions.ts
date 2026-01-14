@@ -40,7 +40,31 @@ export async function createProject(prevState: any, formData: FormData) {
         return { message: 'Unauthorized' }
     }
 
-    const { error } = await supabase
+    // 1. Check Subscription Tier & Project Limit
+    const { data: profile } = await supabase
+        .from('profiles')
+        .select('subscription_tier')
+        .eq('id', user.id)
+        .single()
+
+    const isPro = profile?.subscription_tier === 'pro'
+
+    if (!isPro) {
+        const { count, error: countError } = await supabase
+            .from('projects')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+
+        if (countError) {
+            return { message: 'Database Error: Failed to check project limit.' }
+        }
+
+        if (count !== null && count >= 1) {
+            return { message: 'Free plan limited to 1 project. Upgrade to Pro for unlimited projects.' }
+        }
+    }
+
+    const { data: newProject, error } = await supabase
         .from('projects')
         .insert({
             user_id: user.id,
@@ -51,9 +75,20 @@ export async function createProject(prevState: any, formData: FormData) {
             notes: validatedFields.data.notes,
             due_date: validatedFields.data.due_date ? validatedFields.data.due_date : null
         })
+        .select()
+        .single()
 
     if (error) {
         return { message: 'Database Error: Failed to Create Project.' }
+    }
+
+    // Create initial note if provided
+    if (validatedFields.data.notes) {
+        await supabase.from('project_notes').insert({
+            project_id: newProject.id,
+            user_id: user.id,
+            content: validatedFields.data.notes
+        })
     }
 
     revalidatePath('/dashboard/projects')
@@ -101,6 +136,15 @@ export async function updateProject(id: string, prevState: any, formData: FormDa
 
     if (error) {
         return { message: 'Database Error: Failed to Update Project.' }
+    }
+
+    // Add new note if provided during update
+    if (validatedFields.data.notes && validatedFields.data.notes.trim().length > 0) {
+        await supabase.from('project_notes').insert({
+            project_id: id,
+            user_id: user.id,
+            content: validatedFields.data.notes
+        })
     }
 
     revalidatePath('/dashboard/projects')
@@ -255,30 +299,30 @@ export async function addExpense(projectId: string, expense: { description: stri
 }
 
 export async function deleteExpense(id: string) {
-  const supabase = await createClient()
-  const { error } = await supabase
-    .from('project_expenses')
-    .delete()
-    .eq('id', id)
+    const supabase = await createClient()
+    const { error } = await supabase
+        .from('project_expenses')
+        .delete()
+        .eq('id', id)
 
-  if (error) return { message: error.message }
-  revalidatePath('/dashboard/projects') 
-  return { message: 'Success' }
+    if (error) return { message: error.message }
+    revalidatePath('/dashboard/projects')
+    return { message: 'Success' }
 }
 
 export async function updateExpense(id: string, expense: { description: string, amount: number, category: string, date: string }) {
-  const supabase = await createClient()
-  const { error } = await supabase
-    .from('project_expenses')
-    .update({
-      description: expense.description,
-      amount: expense.amount,
-      category: expense.category,
-      date: expense.date
-    })
-    .eq('id', id)
+    const supabase = await createClient()
+    const { error } = await supabase
+        .from('project_expenses')
+        .update({
+            description: expense.description,
+            amount: expense.amount,
+            category: expense.category,
+            date: expense.date
+        })
+        .eq('id', id)
 
-  if (error) return { message: error.message }
-  revalidatePath('/dashboard/projects')
-  return { message: 'Success' }
+    if (error) return { message: error.message }
+    revalidatePath('/dashboard/projects')
+    return { message: 'Success' }
 }
