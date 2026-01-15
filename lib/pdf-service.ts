@@ -62,6 +62,8 @@ interface DocumentData {
         completion?: string
     }
     agreement_number?: string
+    bid_number?: string
+    validity_period?: string
 }
 
 export async function generateLegalPDF(data: DocumentData, isDraft: boolean = true): Promise<Uint8Array> {
@@ -366,6 +368,161 @@ export async function generateLegalPDF(data: DocumentData, isDraft: boolean = tr
         page.drawText("SUBCONTRACTOR:", { x: rightX, y: sigY + 20, size: 8, font: fontBold })
         page.drawLine({ start: { x: rightX, y: sigY }, end: { x: width - margin, y: sigY }, thickness: 1 })
         page.drawText(data.owner_info?.name || "", { x: rightX, y: sigY + 5, size: 12, font: fontSerif })
+
+    } else if (data.category === 'bid') {
+        // ==========================================
+        //         PROJECT BID PROPOSAL LOGIC
+        // ==========================================
+
+        const drawHeader = (currPage: PDFPage) => {
+            const { width, height } = currPage.getSize()
+            // Obsidian Hammer Logo
+            currPage.drawSvgPath('M 30 0 L 55 15 L 55 45 L 30 60 L 5 45 L 5 15 Z', {
+                x: margin, y: height - 50, color: rgb(0, 0, 0), scale: 0.8,
+            })
+
+            drawCenteredText(currPage, "PROJECT BID PROPOSAL", height - margin, fontBold, 20)
+            drawCenteredText(currPage, `BID NO: ${data.bid_number || 'DRAFT'}`, height - margin - 22, fontRegular, 10, rgb(0.5, 0.5, 0.5))
+
+            // Date & Valid Until
+            currPage.drawText(`DATE: ${data.date_created || 'Pending'}`, { x: width - margin - 140, y: height - 50, size: 9, font: fontBold })
+            currPage.drawText(`VALID UNTIL: ${data.expiration_date || '30 Days'}`, { x: width - margin - 140, y: height - 62, size: 9, font: fontRegular, color: rgb(0.8, 0, 0) })
+        }
+
+        drawHeader(page)
+        const drawWatermark = (currPage: PDFPage) => {
+            if (!isDraft) return
+            const { height } = currPage.getSize()
+            currPage.drawText("MOCK ONLY - DRAFT", {
+                x: margin, y: height / 2 - 100,
+                size: 80, font: fontBold, color: rgb(1, 0, 0), opacity: 0.1, rotate: degrees(45)
+            })
+        }
+        drawWatermark(page)
+
+        yCursor = height - margin - 80
+
+        // --- 2. Parties Grid ---
+        const colW = (width - 2 * margin) / 2
+
+        // Bidder (Contractor)
+        drawGridBox(page, margin, yCursor - 90, colW - 10, 90, "BID SUBMITTED BY", [
+            { label: "Company:", value: data.contractor_info?.name || "N/A", xOffset: 5, yOffset: 0 },
+            { label: "Address:", value: data.contractor_info?.address?.substring(0, 30) || "N/A", xOffset: 5, yOffset: 20 },
+            { label: "License:", value: data.contractor_info?.license || "N/A", xOffset: 5, yOffset: 40 }
+        ], fontBold, fontRegular, 10)
+
+        // Client (Owner)
+        drawGridBox(page, margin + colW + 10, yCursor - 90, colW - 10, 90, "PREPARED FOR", [
+            { label: "Client:", value: data.owner_info?.name || "N/A", xOffset: 5, yOffset: 0 },
+            { label: "Project:", value: data.project_info.name || "N/A", xOffset: 5, yOffset: 20 },
+            { label: "Location:", value: data.project_info.address || "N/A", xOffset: 5, yOffset: 40 }
+        ], fontBold, fontRegular, 10)
+
+        yCursor -= 120
+
+        // Helpers
+        const checkPage = (heightNeeded: number) => {
+            if (yCursor - heightNeeded < margin + 40) {
+                page = pdfDoc.addPage([612, 792])
+                drawHeader(page)
+                drawWatermark(page)
+                yCursor = height - margin - 80
+                drawCenteredText(page, "(Bid Continued)", yCursor + 20, fontRegular, 10)
+            }
+        }
+
+        const drawSectionTitle = (title: string) => {
+            checkPage(30)
+            page.drawRectangle({ x: margin, y: yCursor - 20, width: width - 2 * margin, height: 20, color: rgb(0.95, 0.95, 0.95) })
+            page.drawText(title.toUpperCase(), { x: margin + 5, y: yCursor - 14, size: 10, font: fontBold })
+            yCursor -= 30
+        }
+
+        const drawTextParams = (text: string) => {
+            const lines = wrapText(text, fontRegular, 10, width - 2 * margin)
+            lines.forEach(line => {
+                checkPage(15)
+                page.drawText(line, { x: margin, y: yCursor, size: 10, font: fontRegular })
+                yCursor -= 14
+            })
+            yCursor -= 10
+        }
+
+        // --- 3. Scope of Work ---
+        drawSectionTitle("Scope of Work")
+        drawTextParams(data.scope_of_work || "As per client requirements and attached specifications.")
+
+        // --- 4. Bid Breakdown Table ---
+        drawSectionTitle("Bid Breakdown") // 30px
+
+        // Header
+        const tableW = width - 2 * margin
+        const qtyColW = 40
+        const unitColW = 40
+        const priceColW = 80
+        const totalColW = 80
+        const descColW = tableW - qtyColW - unitColW - priceColW - totalColW
+
+        const drawTableRow = (desc: string, qty: string, unit: string, price: string, total: string, isHeader = false, isBold = false) => {
+            checkPage(20)
+            const f = isHeader || isBold ? fontBold : fontRegular
+            const y = yCursor
+
+            if (isHeader) {
+                page.drawRectangle({ x: margin, y: y - 15, width: tableW, height: 20, color: rgb(0.9, 0.9, 0.9) })
+            } else {
+                page.drawLine({ start: { x: margin, y: y - 15 }, end: { x: margin + tableW, y: y - 15 }, thickness: 0.5, color: rgb(0.8, 0.8, 0.8) })
+            }
+
+            page.drawText(desc, { x: margin + 5, y: y - 10, size: 9, font: f, maxWidth: descColW - 10 })
+            if (qty) page.drawText(qty, { x: margin + descColW + 5, y: y - 10, size: 9, font: f })
+            if (unit) page.drawText(unit, { x: margin + descColW + qtyColW + 5, y: y - 10, size: 9, font: f })
+            if (price) page.drawText(price, { x: margin + descColW + qtyColW + unitColW + 5, y: y - 10, size: 9, font: f })
+            if (total) page.drawText(total, { x: margin + tableW - totalColW + 5, y: y - 10, size: 9, font: f }) // Right aligned ideally
+
+            yCursor -= 20
+        }
+
+        drawTableRow("ITEM / DESCRIPTION", "QTY", "UNIT", "UNIT PRICE", "TOTAL", true)
+
+        // Content - If fees exist use them, else simplified single line
+        if (data.fees && data.fees.length > 0) {
+            data.fees.forEach(fee => {
+                drawTableRow(fee.description, "1", "LS", fee.amount, fee.amount)
+            })
+        } else {
+            drawTableRow("General Construction Services (Base Bid)", "1", "LS", `$${data.payment_terms?.amount || '0.00'}`, `$${data.payment_terms?.amount || '0.00'}`)
+        }
+
+        // Total
+        yCursor -= 5
+        drawTableRow("TOTAL BID AMOUNT", "", "", "", `$${data.payment_terms?.amount || '0.00'}`, false, true)
+        yCursor -= 20
+
+        // --- 5. Terms & Conditions ---
+        drawSectionTitle("Terms & Conditions")
+        drawTextParams("1. Validity: This bid is valid for 30 days from the date submitted.")
+        drawTextParams("2. Payment Terms: " + (data.payment_terms?.schedule || "Net 30 upon completion."))
+        drawTextParams("3. Exclusions: Unforeseen site conditions, hazardous materials removal, and permits fees unless specified.")
+        drawTextParams("4. Acceptance: Signature below indicates acceptance of this proposal and authorizes the contractor to proceed.")
+
+        // --- 6. Signatures ---
+        checkPage(150)
+        yCursor -= 40
+
+        const sigY = yCursor
+        const sigLineW = 200
+
+        page.drawText("SUBMITTED BY:", { x: margin, y: sigY + 20, size: 9, font: fontBold })
+        page.drawLine({ start: { x: margin, y: sigY }, end: { x: margin + sigLineW, y: sigY }, thickness: 1 })
+        page.drawText(data.contractor_info?.name || "Contractor", { x: margin, y: sigY + 5, size: 10, font: fontSerif })
+        page.drawText(`Date: ${data.date_created}`, { x: margin + sigLineW - 60, y: sigY + 5, size: 9, font: fontRegular })
+
+
+        page.drawText("ACCEPTED BY:", { x: width - margin - sigLineW, y: sigY + 20, size: 9, font: fontBold })
+        page.drawLine({ start: { x: width - margin - sigLineW, y: sigY }, end: { x: width - margin, y: sigY }, thickness: 1 })
+        page.drawText("Owner / Client", { x: width - margin - sigLineW, y: sigY + 5, size: 10, font: fontSerif })
 
     } else {
         // ==========================================

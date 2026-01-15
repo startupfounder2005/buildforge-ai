@@ -63,6 +63,7 @@ export async function POST(req: Request) {
         // --- 1. AI Content Generation (Hybrid) ---
         let conditions: string[] = []
         let preventativeMeasures: string[] = []
+        let bidFees: { description: string, amount: string }[] = []
 
         if (category === 'safety') {
             // -- Safety Prompt --
@@ -84,6 +85,28 @@ export async function POST(req: Request) {
             } catch (e) {
                 console.error("AI Safety Generation failed", e)
                 preventativeMeasures = ["Review safety protocols.", "Conduct team safety briefing.", "Monitor site conditions."]
+            }
+
+        } else if (category === 'bid') {
+            // -- Bid Breakdown Prompt --
+            const systemPrompt = `You are a construction estimator. Create a line-item cost breakdown based on the project scope and total estimated cost.
+            Distribute the Total Cost (${estimatedCost || 'Unknown'}) reasonably across the items.
+            Return ONLY valid JSON: { "fees": [{ "description": "Item Description", "amount": "$0.00" }] }`
+            const userPrompt = `Scope: ${scope}. Total Cost: ${estimatedCost}.`
+
+            try {
+                const completion = await openai.chat.completions.create({
+                    model: "gpt-4o",
+                    messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: userPrompt }
+                    ],
+                    response_format: { type: "json_object" }
+                })
+                const aiData = JSON.parse(completion.choices[0].message.content || '{}')
+                bidFees = aiData.fees || []
+            } catch (e) {
+                console.error("AI Bid Generation failed", e)
             }
 
         } else {
@@ -176,6 +199,37 @@ export async function POST(req: Request) {
                 timeline: {
                     start: startDate,
                     completion: completionDate
+                }
+            }
+        } else if (category === 'bid' || category === 'project_bid') {
+            documentData = {
+                category: 'bid',
+                type: 'PROJECT BID PROPOSAL',
+                title: title.toUpperCase(),
+                bid_number: `BID-2026-${projectId.substring(0, 6).toUpperCase()}`,
+                date_created: today,
+                expiration_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days
+                project_info: {
+                    name: title,
+                    address: address,
+                    city: jurisdiction ? jurisdiction.split(',')[0].trim() : '',
+                    state: jurisdiction && jurisdiction.includes(',') ? jurisdiction.split(',')[1].trim() : ''
+                },
+                owner_info: {
+                    name: ownerName, // "Prepared For"
+                    address: ownerAddress || 'Address on File',
+                    phone: ownerPhone
+                },
+                contractor_info: {
+                    name: contractorName, // "Submitted By"
+                    address: contractorAddress || 'Address on File',
+                    license: contractorLicense
+                },
+                scope_of_work: scope,
+                fees: bidFees.length > 0 ? bidFees : [], // Use AI breakdown if available
+                payment_terms: {
+                    amount: estimatedCost || '0.00',
+                    schedule: 'Net 30'
                 }
             }
         } else {
