@@ -1,41 +1,22 @@
 import React from "react";
+import Image from "next/image";
 
 export const ObsidianLogo = ({ className }: { className?: string }) => {
+    // Determine size and styling from className if possible, or defaulting
+    // Since className usually contains width/height classes (like size-10, h-6 w-6), 
+    // we wrap Image in a relative div to respect parent sizing, or just use width/height props if passed.
+    // However, simplest way for 'className' propagation is using an img tag or Next Image with fill/contain if parent defines size.
+    // Given usage in sidebar is "size-full" inside a "size-10" container.
+
     return (
-        <svg
-            viewBox="0 0 100 100"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            className={className}
-        >
-            <defs>
-                <g id="hammer-shape">
-                    {/* Handle - Vertical before rotation */}
-                    <rect x="42" y="35" width="16" height="85" rx="2" />
-                    {/* Head - Horizontal block before rotation */}
-                    <rect x="15" y="15" width="70" height="30" rx="4" />
-                </g>
-                <clipPath id="hammer-clip">
-                    <use href="#hammer-shape" />
-                </clipPath>
-            </defs>
-
-            {/* Group rotated 45 degrees around center */}
-            <g transform="rotate(45 50 50) scale(0.85 0.85) translate(10 10)">
-                {/* Main Hammer Shape being rendered (Purple) */}
-                <use href="#hammer-shape" fill="#7C3AED" />
-
-                {/* Black Lightning Crack - Clipped to stay inside */}
-                <g clipPath="url(#hammer-clip)">
-                    <path
-                        d="M50 10 L46 25 L54 35 L46 45 L52 55 L48 70 L51 90"
-                        stroke="black"
-                        strokeWidth="5"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                    />
-                </g>
-            </g>
-        </svg>
+        <div className={`relative flex items-center justify-center ${className}`}>
+            <Image
+                src="/obsidian-logo.png"
+                alt="Obsidian Logo"
+                fill
+                className="object-contain" // ensures aspect ratio is preserved
+                priority
+            />
+        </div>
     );
 };

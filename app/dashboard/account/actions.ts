@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
+import { redirect } from 'next/navigation'
 
 const profileSchema = z.object({
     fullName: z.string().min(1, "Name is required"),
@@ -207,4 +208,51 @@ export async function uploadAvatar(formData: FormData) {
     revalidatePath('/dashboard/account')
     revalidatePath('/', 'layout')
     return { message: 'Success', avatarUrl: publicUrl }
+}
+
+// --- Delete Account ---
+
+export async function deleteAccountAction() {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { message: 'Unauthorized' }
+    }
+
+    const adminClient = createAdminClient()
+
+    try {
+        // 1. Manual Clean-up causing FK violations
+        // The schema lacks 'ON DELETE CASCADE' on 'projects.user_id', so we must delete projects manually.
+        // Creating projects triggers cascades for: expenses, milestones, documents, project_notes
+
+        console.log(`[Delete] Cleaning up data for user ${user.id}...`)
+
+        // Delete all projects owned by user
+        // We use adminClient to bypass any potential RLS friction during deletion
+        const { error: projectError } = await adminClient
+            .from('projects')
+            .delete()
+            .eq('user_id', user.id)
+
+        if (projectError) {
+            console.error("[Delete] Project cleanup failed:", projectError)
+            return { message: 'Failed to clean up user data: ' + projectError.message }
+        }
+
+        // 2. Delete from Auth (Triggers cascade to 'profiles')
+        const { error: authError } = await adminClient.auth.admin.deleteUser(user.id)
+
+        if (authError) {
+            console.error("[Delete] Auth deletion failed:", authError)
+            return { message: 'Failed to delete account: ' + authError.message }
+        }
+
+        return { message: 'Success' }
+
+    } catch (err: any) {
+        console.error("[Delete] Unexpected error:", err)
+        return { message: 'Unexpected error during deletion: ' + err.message }
+    }
 }

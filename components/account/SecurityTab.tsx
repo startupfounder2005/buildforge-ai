@@ -1,6 +1,9 @@
 "use client"
 
+
 import { useState } from "react"
+import { deleteAccountAction } from "@/app/dashboard/account/actions" // Added import
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -35,6 +38,8 @@ export function SecurityTab() {
 
     // Delete Modal
     const [deleteOpen, setDeleteOpen] = useState(false)
+    const [deleteConfirm, setDeleteConfirm] = useState("") // Added state
+    const router = useRouter()
     const supabase = createClient()
 
     const handleUpdatePassword = async (e: React.FormEvent) => {
@@ -109,9 +114,36 @@ export function SecurityTab() {
         }
     }
 
-    const handleDeleteAccount = () => {
-        toast.error("Account deletion scheduled (Simulation)")
-        setDeleteOpen(false)
+    const handleDeleteAccount = async () => {
+        if (deleteConfirm !== "DELETE") {
+            toast.error("Please type DELETE to confirm.")
+            return
+        }
+
+        const toastId = toast.loading("Deleting account...")
+
+        try {
+            const result = await deleteAccountAction()
+
+            if (result.message === 'Success') {
+                toast.dismiss(toastId)
+                toast.success("Account deleted. Goodbye!")
+                setDeleteOpen(false)
+
+                // Clear local session immediately
+                await supabase.auth.signOut()
+
+                // Hard redirect
+                window.location.href = "/auth/signup"
+            } else {
+                toast.dismiss(toastId)
+                toast.error(result.message)
+            }
+        } catch (error) {
+            toast.dismiss(toastId)
+            toast.error("An unexpected error occurred")
+            console.error(error)
+        }
     }
 
     return (
@@ -306,7 +338,11 @@ export function SecurityTab() {
                     </DialogHeader>
                     <div className="space-y-2 py-4">
                         <Label>Type "DELETE" to confirm</Label>
-                        <Input placeholder="DELETE" />
+                        <Input
+                            placeholder="DELETE"
+                            value={deleteConfirm}
+                            onChange={(e) => setDeleteConfirm(e.target.value)}
+                        />
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setDeleteOpen(false)}>Cancel</Button>

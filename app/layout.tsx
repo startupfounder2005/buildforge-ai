@@ -13,8 +13,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Obsidian",
-  description: "Forging the Future of Construction Intelligence",
+  title: "Obsidian Enterprise",
+  description: "Advanced AI Construction Management",
+  icons: {
+    icon: "/obsidian-logo.png",
+    shortcut: "/obsidian-logo.png",
+    apple: "/obsidian-logo.png",
+  },
 };
 
 import { CursorFixer } from "@/components/ui/cursor-fixer";

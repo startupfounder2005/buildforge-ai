@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { useSearchParams } from 'next/navigation'
 import React, { Suspense } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
+import { ObsidianLogo } from '@/components/ui/ObsidianLogo'
 
 function LoginForm() {
     const searchParams = useSearchParams()
@@ -19,7 +20,10 @@ function LoginForm() {
     return (
         <div className="flex min-h-screen items-center justify-center p-4">
             <Card className="w-full max-w-md">
-                <CardHeader>
+                <CardHeader className="text-center">
+                    <div className="flex justify-center mb-4">
+                        <ObsidianLogo className="h-12 w-12" />
+                    </div>
                     <CardTitle className="text-2xl font-bold">Sign In</CardTitle>
                     <CardDescription>
                         Enter your email below to login to your account

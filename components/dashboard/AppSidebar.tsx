@@ -89,8 +89,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild className="h-auto hover:bg-sidebar-accent hover:text-sidebar-accent-foreground">
                             <Link href="/dashboard" className="flex flex-row items-center justify-start gap-3">
-                                <div className="flex aspect-square size-10 items-center justify-center shrink-0">
-                                    <ObsidianLogo className="size-full" />
+                                <div className="flex aspect-square size-10 items-center justify-center shrink-0 bg-white rounded-lg p-0.5 shadow-sm border border-border/10 overflow-hidden">
+                                    <ObsidianLogo className="size-full scale-110" />
                                 </div>
                                 <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
                                     <span className="truncate font-bold text-sidebar-foreground text-lg">Obsidian</span>
