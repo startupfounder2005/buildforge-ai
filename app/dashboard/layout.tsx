@@ -79,7 +79,7 @@ export default async function DashboardLayout({
 
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                                <Button variant="ghost" className="relative h-8 w-8 rounded-full transition-all hover:ring-2 hover:ring-primary hover:ring-offset-2 hover:scale-105">
                                     <Avatar className="h-8 w-8">
                                         <AvatarImage src={profile?.avatar_url || ''} alt="@user" className="object-cover" />
                                         <AvatarFallback className="bg-primary text-primary-foreground">
@@ -109,7 +109,7 @@ export default async function DashboardLayout({
                                 <DropdownMenuSeparator />
                                 <form action={signout}>
                                     <button style={{ cursor: 'pointer' }} className="w-full text-left">
-                                        <DropdownMenuItem className="text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer">
+                                        <DropdownMenuItem className="text-destructive focus:bg-red-600 focus:text-white cursor-pointer transition-colors">
                                             <LogOut className="mr-2 h-4 w-4" /> Log out
                                         </DropdownMenuItem>
                                     </button>

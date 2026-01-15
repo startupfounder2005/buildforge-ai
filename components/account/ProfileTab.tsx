@@ -98,6 +98,16 @@ interface UserProfile {
     subscription_tier?: string;
 }
 
+const getRoleBadgeColor = (role: string | null) => {
+    switch ((role || '').toLowerCase()) {
+        case 'admin': return 'bg-red-500/10 text-red-500 border-red-500/20';
+        case 'manager': return 'bg-blue-500/10 text-blue-500 border-blue-500/20';
+        case 'contractor': return 'bg-orange-500/10 text-orange-500 border-orange-500/20';
+        case 'engineer': return 'bg-purple-500/10 text-purple-500 border-purple-500/20';
+        default: return 'bg-secondary/50 text-secondary-foreground border-secondary-foreground/20';
+    }
+}
+
 export function ProfileTab({ user: initialUser }: { user: UserProfile }) {
     const [user, setUser] = useState(initialUser)
     const [authUser, setAuthUser] = useState<AuthUser | null>(null)
@@ -127,6 +137,7 @@ export function ProfileTab({ user: initialUser }: { user: UserProfile }) {
 
     const [countryIso, setCountryIso] = useState("US")
     const [localPhone, setLocalPhone] = useState("")
+    const [pendingEmail, setPendingEmail] = useState("")
     const fileInputRef = useRef<HTMLInputElement>(null)
 
     // Fetch Auth User
@@ -141,6 +152,7 @@ export function ProfileTab({ user: initialUser }: { user: UserProfile }) {
     // Sync state with prop updates
     useEffect(() => {
         setUser(initialUser)
+        setPendingEmail(initialUser.email)
     }, [initialUser])
 
     // Realtime Subscription
@@ -246,9 +258,16 @@ export function ProfileTab({ user: initialUser }: { user: UserProfile }) {
     // Email Handlers
     const handleEmailInit = async () => {
         startTransition(async () => {
-            const result = await initiateEmailChange(user.email)
+            // Use pendingEmail if set, otherwise user.email
+            const emailToVerify = pendingEmail || user.email
+
+            if (emailToVerify === user.email) {
+                // Logic handled by button click now, but kept safe here
+            }
+
+            const result = await initiateEmailChange(emailToVerify)
             if (result.message === 'Success') {
-                toast.success("Verification code sent to " + user.email)
+                toast.success("Verification code sent to " + emailToVerify)
                 setEmailStep('verify')
             } else {
                 toast.error(result.message)
@@ -380,7 +399,7 @@ export function ProfileTab({ user: initialUser }: { user: UserProfile }) {
                                 <Button onClick={(e) => {
                                     e.preventDefault()
                                     setIsEditing(true)
-                                }} variant="outline" className="gap-2 text-primary border-primary/20 hover:bg-primary/10">
+                                }} variant="secondary" className="gap-2 text-foreground/80 font-medium shadow-sm border border-border/50 transition-all hover:bg-accent hover:text-white hover:border-accent">
                                     <Edit2 className="h-4 w-4" /> Edit Profile
                                 </Button>
                             ) : (
@@ -389,7 +408,7 @@ export function ProfileTab({ user: initialUser }: { user: UserProfile }) {
                                         e.preventDefault()
                                         setIsEditing(false)
                                     }} disabled={isPending}>Cancel</Button>
-                                    <Button type="submit" className="gap-2 bg-[#0047AB] hover:bg-[#0055CC] text-white" disabled={isPending}>
+                                    <Button type="submit" className="gap-2 bg-emerald-700 hover:bg-emerald-800 text-white shadow-md transition-colors font-medium" disabled={isPending}>
                                         {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                                         Save Changes
                                     </Button>
@@ -427,7 +446,7 @@ export function ProfileTab({ user: initialUser }: { user: UserProfile }) {
                                                 </SelectContent>
                                             </Select>
                                         ) : (
-                                            <Badge variant="outline" className="px-3 py-1 text-sm font-medium capitalize bg-secondary/50 border-secondary-foreground/20 text-secondary-foreground">
+                                            <Badge variant="outline" className={`px-3 py-1 text-sm font-medium capitalize ${getRoleBadgeColor(user?.role || 'user')}`}>
                                                 {user?.role || "User"}
                                             </Badge>
                                         )}
@@ -440,16 +459,28 @@ export function ProfileTab({ user: initialUser }: { user: UserProfile }) {
                                     </Label>
 
                                     {isEditing ? (
-                                        <div className="flex gap-2 relative group">
-                                            <Input
-                                                name="email"
-                                                defaultValue={user?.email || ""}
-                                                className="bg-background/50 flex-1 pl-10"
-                                                readOnly
-                                                onClick={() => setIsEmailDialogOpen(true)}
-                                            />
-                                            <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                            <Button type="button" variant="outline" onClick={() => setIsEmailDialogOpen(true)}>
+                                        <div className="flex gap-2 relative group items-center">
+                                            <div className="relative flex-1">
+                                                <Input
+                                                    name="email"
+                                                    value={pendingEmail}
+                                                    onChange={(e) => setPendingEmail(e.target.value)}
+                                                    className="bg-background/50 pl-10"
+                                                />
+                                                <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                            </div>
+                                            <Button
+                                                type="button"
+                                                variant="secondary"
+                                                className="shadow-sm border border-border/50 hover:bg-accent hover:text-white hover:border-accent transition-all"
+                                                onClick={() => {
+                                                    if (pendingEmail === user.email) {
+                                                        toast.info("Email is unchanged. Enter a new email to update.")
+                                                        return
+                                                    }
+                                                    setIsEmailDialogOpen(true)
+                                                }}
+                                            >
                                                 Change
                                             </Button>
                                         </div>
@@ -481,11 +512,12 @@ export function ProfileTab({ user: initialUser }: { user: UserProfile }) {
                                                         type="button"
                                                         variant="outline"
                                                         size="sm"
-                                                        className="h-6 text-[10px] px-2 text-primary border-primary/20 hover:bg-primary/10"
+
                                                         onClick={() => {
                                                             setEmailStep('init')
                                                             setIsEmailDialogOpen(true)
                                                         }}
+                                                        className="h-7 px-3 text-xs font-medium text-emerald-600 border-emerald-600/20 hover:bg-emerald-500/10 hover:text-emerald-700 dark:hover:text-emerald-500"
                                                     >
                                                         Verify Now
                                                     </Button>
@@ -614,7 +646,6 @@ export function ProfileTab({ user: initialUser }: { user: UserProfile }) {
                                         ) : (
                                             <div className={`flex items-center justify-between rounded-md border text-sm shadow-sm transition-all ${user?.phone && user.phone_verified ? "border-input bg-muted/50 px-3 py-2 text-muted-foreground" : "border-transparent px-0.5 py-1.5"}`}>
                                                 <div className="flex items-center gap-2">
-                                                    <Phone className={`h-4 w-4 ${user?.phone && user.phone_verified ? "text-muted-foreground opacity-70" : "text-muted-foreground"}`} />
                                                     <span>{user?.phone ? user.phone : <span className="text-muted-foreground italic">No phone added</span>}</span>
                                                 </div>
                                                 {user?.phone && (
@@ -638,11 +669,12 @@ export function ProfileTab({ user: initialUser }: { user: UserProfile }) {
                                                                 type="button"
                                                                 variant="outline"
                                                                 size="sm"
-                                                                className="h-6 text-[10px] px-2 text-primary border-primary/20 hover:bg-primary/10"
+
                                                                 onClick={() => {
                                                                     setPhoneStep("init")
                                                                     setIsPhoneDialogOpen(true)
                                                                 }}
+                                                                className="h-7 px-3 text-xs font-medium text-emerald-600 border-emerald-600/20 hover:bg-emerald-500/10 hover:text-emerald-700 dark:hover:text-emerald-500"
                                                             >
                                                                 Verify Now
                                                             </Button>
@@ -864,7 +896,7 @@ export function ProfileTab({ user: initialUser }: { user: UserProfile }) {
                         <Button
                             onClick={saveCroppedImage}
                             disabled={isUploading}
-                            className="bg-[#0047AB] hover:bg-[#0055CC] text-white"
+                            className="bg-emerald-700 hover:bg-emerald-800 text-white"
                         >
                             {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Save Photo
