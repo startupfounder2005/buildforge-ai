@@ -7,6 +7,13 @@ export async function POST(req: Request) {
         // In a real app, call OpenAI here.
         // const completion = await openai.chat.completions.create({...})
 
+        if (!description || description.trim().length < 15 || description.includes("blah")) {
+            return NextResponse.json(
+                { error: "Description is too vague or unrelated. Please provide more specific details about the construction project." },
+                { status: 400 }
+            );
+        }
+
         // Mock response for MVP
         const milestones = [
             { title: "Site Survey & Clearing", offsetStart: 0, duration: 5 },

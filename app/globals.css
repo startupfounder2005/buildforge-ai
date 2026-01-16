@@ -4,16 +4,20 @@
 
 :root {
   /* Obsidian Palette */
-  --background: 0 0% 3.9%; /* #0A0A0A */
+  --background: 0 0% 3.9%;
+  /* #0A0A0A */
   --foreground: 0 0% 98%;
 
-  --card: 0 0% 6.7%; /* #111111 */
+  --card: 0 0% 6.7%;
+  /* #111111 */
   --card-foreground: 0 0% 98%;
 
-  --popover: 0 0% 6.7%; /* Match card */
+  --popover: 0 0% 6.7%;
+  /* Match card */
   --popover-foreground: 0 0% 98%;
 
-  --primary: 215 100% 33.5%; /* #0047AB Neon Blue */
+  --primary: 215 100% 33.5%;
+  /* #0047AB Neon Blue */
   --primary-foreground: 0 0% 98%;
 
   --secondary: 0 0% 15%;
@@ -22,7 +26,8 @@
   --muted: 0 0% 15%;
   --muted-foreground: 0 0% 64%;
 
-  --accent: 263 70% 50%; /* #7C3AED Subtle Purple Highlights */
+  --accent: 263 70% 25%;
+  /* #451573 Balanced Obsidian Purple */
   --accent-foreground: 0 0% 98%;
 
   --destructive: 0 62.8% 30.6%;
@@ -34,11 +39,13 @@
   --input: 0 0% 20%;
   --ring: 215 100% 33.5%;
 
-  --sidebar-background: 0 0% 3.9%; /* #0A0A0A */
+  --sidebar-background: 0 0% 3.9%;
+  /* #0A0A0A */
   --sidebar-foreground: 0 0% 98%;
   --sidebar-primary: 215 100% 33.5%;
   --sidebar-primary-foreground: 0 0% 98%;
-  --sidebar-accent: 263 70% 50%; /* Purple sidebar accents */
+  --sidebar-accent: 263 70% 25%;
+  /* Balanced purple sidebar accents */
   --sidebar-accent-foreground: 0 0% 98%;
   --sidebar-border: 0 0% 20%;
   --sidebar-ring: 215 100% 33.5%;

@@ -9,7 +9,7 @@ export default function Home() {
       <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_100%)]pointer-events-none" />
 
       <main className="relative z-10 flex flex-col items-center gap-10 p-8 text-center sm:p-20">
-        <div className="relative size-40 md:size-80 animate-in fade-in zoom-in duration-1000">
+        <div className="relative size-40 md:size-80">
           <ObsidianLogo className="relative z-10 w-full h-full" />
         </div>
 
@@ -23,7 +23,7 @@ export default function Home() {
           <Button asChild size="lg" className="h-12 px-8 text-base bg-[#0047AB] hover:bg-[#0055CC] text-white transition-all">
             <Link href="/auth/signup">Get Started</Link>
           </Button>
-          <Button variant="outline" asChild size="lg" className="h-12 px-8 text-base border-white/20 hover:bg-[#7C3AED] hover:border-[#7C3AED] hover:text-white transition-all backdrop-blur-sm">
+          <Button variant="outline" asChild size="lg" className="h-12 px-8 text-base border-white/20 hover:bg-accent hover:border-accent hover:text-white transition-all backdrop-blur-sm">
             <Link href="/auth/login">Login</Link>
           </Button>
         </div>

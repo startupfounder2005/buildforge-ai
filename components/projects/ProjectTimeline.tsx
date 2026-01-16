@@ -205,7 +205,50 @@ export function ProjectTimeline({ project }: ProjectTimelineProps) {
 
     // AI Stub
     const handleAISuggest = async () => {
-        toast.info("AI Generation feature coming in next update!")
+        setLoading(true)
+        try {
+            const response = await fetch('/api/generate-milestones', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    projectType: project.name, // Simple heuristic for now
+                    description: project.description || ''
+                })
+            })
+
+            const data = await response.json()
+
+            if (!response.ok) {
+                toast.error(data.error || "Failed to generate milestones")
+                return
+            }
+
+            if (data.milestones) {
+                // Auto-add milestones for now
+                // In a real app we might show a review dialog
+                for (const m of data.milestones) {
+                    // Calculate dates relative to project start or today
+                    const startDate = new Date()
+                    startDate.setDate(startDate.getDate() + m.offsetStart)
+                    const endDate = new Date(startDate)
+                    endDate.setDate(startDate.getDate() + m.duration)
+
+                    await createMilestone(
+                        project.id,
+                        m.title,
+                        startDate.toISOString().split('T')[0],
+                        endDate.toISOString().split('T')[0]
+                    )
+                }
+                toast.success(`Generated ${data.milestones.length} milestones!`)
+                fetchMilestones()
+            }
+        } catch (e) {
+            console.error(e)
+            toast.error("Failed to generate milestones")
+        } finally {
+            setLoading(false)
+        }
     }
 
     return (

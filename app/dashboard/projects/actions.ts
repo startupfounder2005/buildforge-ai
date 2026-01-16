@@ -7,12 +7,12 @@ import { z } from 'zod'
 
 const projectSchema = z.object({
     name: z.string().min(1, "Name is required"),
-    location: z.string().optional(),
-    description: z.string().optional(),
-    status: z.string().optional(), // Added status
-    notes: z.string().optional(), // Added notes
+    location: z.string().optional().nullable(),
+    description: z.string().optional().nullable(),
+    status: z.string().optional().nullable(), // Added status
+    notes: z.string().optional().nullable(), // Added notes
     due_date: z.string().optional().nullable(), // Added due_date as optional string
-    budget: z.string().optional(), // Added budget
+    budget: z.string().optional().nullable(), // Added budget
 })
 
 export async function createProject(prevState: any, formData: FormData) {

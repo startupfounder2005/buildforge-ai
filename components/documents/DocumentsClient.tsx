@@ -388,7 +388,7 @@ export function DocumentsClient({ initialDocuments, projects, userId, plan }: Do
                             variant="ghost"
                             size="icon"
                             className={`h-8 w-8 rounded-sm transition-all ${viewMode === 'table'
-                                ? 'bg-[#7C3AED] text-white shadow-sm hover:bg-[#6D28D9]'
+                                ? 'bg-accent text-accent-foreground shadow-sm hover:bg-accent/90'
                                 : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
                                 }`}
                             onClick={() => setViewMode('table')}
@@ -399,7 +399,7 @@ export function DocumentsClient({ initialDocuments, projects, userId, plan }: Do
                             variant="ghost"
                             size="icon"
                             className={`h-8 w-8 rounded-sm transition-all ${viewMode === 'grid'
-                                ? 'bg-[#7C3AED] text-white shadow-sm hover:bg-[#6D28D9]'
+                                ? 'bg-accent text-accent-foreground shadow-sm hover:bg-accent/90'
                                 : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
                                 }`}
                             onClick={() => setViewMode('grid')}

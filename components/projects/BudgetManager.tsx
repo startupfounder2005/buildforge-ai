@@ -1,4 +1,5 @@
-import { useState, useTransition } from 'react'
+import { useState, useTransition, useEffect } from 'react'
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -43,6 +44,11 @@ export function BudgetManager({ projectId, initialBudget, initialExpenses }: Bud
     const [selectedExpenses, setSelectedExpenses] = useState<Set<string>>(new Set())
     const [isPending, startTransition] = useTransition()
 
+    // Sync state with props when server revalidates
+    useEffect(() => {
+        if (initialExpenses) setExpenses(initialExpenses)
+    }, [initialExpenses])
+
     // Budget State
     const [localBudgetInput, setLocalBudgetInput] = useState(initialBudget?.toString() || '')
 
@@ -57,18 +63,37 @@ export function BudgetManager({ projectId, initialBudget, initialExpenses }: Bud
     // Expense Edit State
     const [editingExpense, setEditingExpense] = useState<any>(null)
 
-    const expenses = initialExpenses || []
+    // Ensure expenses is a state variable initialized from props
+    const [expenses, setExpenses] = useState(initialExpenses || [])
+
+
+
     const totalExpenses = expenses.reduce((sum: number, item: any) => sum + (item.amount || 0), 0)
     const budget = initialBudget || 0
     const remaining = budget - totalExpenses
     const usage = budget > 0 ? (totalExpenses / budget) * 100 : 0
-    // "Run Rate" is actually just usage %, renaming display for clarity or keeping logical var same
-    // User asked "what is run rate", so we should clarify implementation or rename UI.
-    // I will rename the UI label to "% Spent" to be accurate.
 
     const handleUpdateBudget = async () => {
+        if (!localBudgetInput || localBudgetInput.trim() === '') {
+            toast.error("Please enter a valid number")
+            return
+        }
+
+        const amount = Number(localBudgetInput)
+        const MIN_BUDGET = 100
+
+        if (isNaN(amount)) {
+            toast.error("Please enter a valid number")
+            return
+        }
+
+        if (amount < MIN_BUDGET) {
+            toast.error(`Budget must be at least $${MIN_BUDGET}`)
+            return
+        }
+
         startTransition(async () => {
-            const res = await updateProjectBudget(projectId, Number(localBudgetInput))
+            const res = await updateProjectBudget(projectId, amount)
             if (res.message === 'Success') {
                 toast.success('Budget updated')
                 setIsBudgetOpen(false)
@@ -79,11 +104,33 @@ export function BudgetManager({ projectId, initialBudget, initialExpenses }: Bud
     }
 
     const handleAddExpense = async () => {
-        if (!newExpense.description || !newExpense.amount) return toast.error("Missing fields")
+        // Validate description
+        if (!newExpense.description || newExpense.description.trim() === '') {
+            toast.error("Please enter a description")
+            return
+        }
+
+        // Validate amount
+        if (!newExpense.amount || newExpense.amount.toString().trim() === '') {
+            toast.error("Please enter a valid amount")
+            return
+        }
+
+        const amount = parseFloat(newExpense.amount)
+        if (isNaN(amount) || amount <= 0) {
+            toast.error("Expense amount must be greater than $0")
+            return
+        }
+
+        if (!newExpense.date) {
+            toast.error("Please select a date")
+            return
+        }
+
         startTransition(async () => {
             const res = await addExpense(projectId, {
                 description: newExpense.description,
-                amount: Number(newExpense.amount),
+                amount: amount,
                 category: newExpense.category,
                 date: newExpense.date
             })
@@ -91,6 +138,7 @@ export function BudgetManager({ projectId, initialBudget, initialExpenses }: Bud
                 toast.success('Expense added')
                 setIsExpenseOpen(false)
                 setNewExpense({ description: '', amount: '', category: 'Material', date: new Date().toISOString().split('T')[0] })
+                // No need to manually update state as revalidatePath in action + useEffect sync will handle it
             } else {
                 toast.error(res.message)
             }
@@ -99,11 +147,32 @@ export function BudgetManager({ projectId, initialBudget, initialExpenses }: Bud
 
     const handleEditExpense = async () => {
         if (!editingExpense) return
-        if (!editingExpense.description || !editingExpense.amount) return toast.error("Missing fields")
+
+        if (!editingExpense.description || editingExpense.description.trim() === '') {
+            toast.error("Please enter a description")
+            return
+        }
+
+        if (!editingExpense.amount || editingExpense.amount.toString().trim() === '') {
+            toast.error("Please enter a valid amount")
+            return
+        }
+
+        const amount = parseFloat(editingExpense.amount)
+        if (isNaN(amount) || amount <= 0) {
+            toast.error("Expense amount must be greater than $0")
+            return
+        }
+
+        if (!editingExpense.date) {
+            toast.error("Please select a date")
+            return
+        }
+
         startTransition(async () => {
             const res = await updateExpense(editingExpense.id, {
                 description: editingExpense.description,
-                amount: Number(editingExpense.amount),
+                amount: amount,
                 category: editingExpense.category,
                 date: editingExpense.date
             })
@@ -128,7 +197,6 @@ export function BudgetManager({ projectId, initialBudget, initialExpenses }: Bud
             if (res.message === 'Success') {
                 toast.success('Expense deleted')
                 setDeleteConfirmId(null)
-                // Remove from selection if it was selected
                 const newSelected = new Set(selectedExpenses)
                 newSelected.delete(deleteConfirmId)
                 setSelectedExpenses(newSelected)
@@ -243,69 +311,71 @@ export function BudgetManager({ projectId, initialBudget, initialExpenses }: Bud
                         </DialogContent>
                     </Dialog>
 
-                    <Dialog open={isExpenseOpen} onOpenChange={setIsExpenseOpen}>
-                        <DialogTrigger asChild>
-                            <Button className="h-9 px-3 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white gap-1.5 shadow-sm">
-                                <Plus className="h-3.5 w-3.5" /> Expense
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Log Expense</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                                <div className="space-y-2">
-                                    <Label>Description</Label>
-                                    <Input
-                                        placeholder="e.g. Concrete mix"
-                                        value={newExpense.description}
-                                        onChange={(e) => setNewExpense({ ...newExpense, description: e.target.value })}
-                                    />
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
+                    {budget > 0 && (
+                        <Dialog open={isExpenseOpen} onOpenChange={setIsExpenseOpen}>
+                            <DialogTrigger asChild>
+                                <Button className="h-9 px-3 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white gap-1.5 shadow-sm">
+                                    <Plus className="h-3.5 w-3.5" /> Expense
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Log Expense</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4 py-4">
                                     <div className="space-y-2">
-                                        <Label>Amount ($)</Label>
+                                        <Label>Description</Label>
                                         <Input
-                                            type="number"
-                                            placeholder="0.00"
-                                            value={newExpense.amount}
-                                            onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
-                                            className="no-spinner"
+                                            placeholder="e.g. Concrete mix"
+                                            value={newExpense.description}
+                                            onChange={(e) => setNewExpense({ ...newExpense, description: e.target.value })}
                                         />
                                     </div>
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label>Amount ($)</Label>
+                                            <Input
+                                                type="number"
+                                                placeholder="0.00"
+                                                value={newExpense.amount}
+                                                onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
+                                                className="no-spinner"
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Category</Label>
+                                            <Select
+                                                value={newExpense.category}
+                                                onValueChange={(val) => setNewExpense({ ...newExpense, category: val })}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Material">Material</SelectItem>
+                                                    <SelectItem value="Labor">Labor</SelectItem>
+                                                    <SelectItem value="Permit">Permit</SelectItem>
+                                                    <SelectItem value="Subcontractor">Subcontractor</SelectItem>
+                                                    <SelectItem value="Other">Other</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
                                     <div className="space-y-2">
-                                        <Label>Category</Label>
-                                        <Select
-                                            value={newExpense.category}
-                                            onValueChange={(val) => setNewExpense({ ...newExpense, category: val })}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="Material">Material</SelectItem>
-                                                <SelectItem value="Labor">Labor</SelectItem>
-                                                <SelectItem value="Permit">Permit</SelectItem>
-                                                <SelectItem value="Subcontractor">Subcontractor</SelectItem>
-                                                <SelectItem value="Other">Other</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                        <Label>Date</Label>
+                                        <Input
+                                            type="date"
+                                            value={newExpense.date}
+                                            onChange={(e) => setNewExpense({ ...newExpense, date: e.target.value })}
+                                        />
                                     </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label>Date</Label>
-                                    <Input
-                                        type="date"
-                                        value={newExpense.date}
-                                        onChange={(e) => setNewExpense({ ...newExpense, date: e.target.value })}
-                                    />
-                                </div>
-                            </div>
-                            <DialogFooter>
-                                <Button onClick={handleAddExpense} disabled={isPending}>Add Expense</Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
+                                <DialogFooter>
+                                    <Button onClick={handleAddExpense} disabled={isPending}>Add Expense</Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
+                    )}
 
                     <AlertDialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
                         <AlertDialogContent>
@@ -441,66 +511,68 @@ export function BudgetManager({ projectId, initialBudget, initialExpenses }: Bud
                     </div>
                 )}
 
-                <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground justify-between">
-                        <div className="flex items-center gap-2">
-                            <ClockIcon />
-                            <span>Recent Expenses</span>
-                        </div>
-                        {expenses.length > 0 && (
+                {budget > 0 && (
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground justify-between">
                             <div className="flex items-center gap-2">
-                                <Checkbox
-                                    checked={selectedExpenses.size === expenses.length && expenses.length > 0}
-                                    onCheckedChange={toggleSelectAll}
-                                />
-                                <span className="text-xs">Select All</span>
+                                <ClockIcon />
+                                <span>Recent Expenses</span>
                             </div>
-                        )}
-                    </div>
+                            {expenses.length > 0 && (
+                                <div className="flex items-center gap-2">
+                                    <Checkbox
+                                        checked={selectedExpenses.size === expenses.length && expenses.length > 0}
+                                        onCheckedChange={toggleSelectAll}
+                                    />
+                                    <span className="text-xs">Select All</span>
+                                </div>
+                            )}
+                        </div>
 
-                    <div className="space-y-0">
-                        {expenses.length === 0 ? (
-                            <p className="text-sm text-center py-4 text-muted-foreground">No expenses logged yet.</p>
-                        ) : (
-                            expenses.slice().reverse().map((expense: any) => (
-                                <div key={expense.id} className={`group flex items-center justify-between py-3 border-b border-white/5 last:border-0 px-2 -mx-2 rounded-md transition-colors ${selectedExpenses.has(expense.id) ? 'bg-blue-900/10' : 'hover:bg-white/5'}`}>
-                                    <div className="flex items-center gap-3">
-                                        <Checkbox
-                                            checked={selectedExpenses.has(expense.id)}
-                                            onCheckedChange={() => toggleSelect(expense.id)}
-                                        />
-                                        <div>
-                                            <p className="font-medium text-sm text-zinc-200">{expense.description}</p>
-                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                                <span>{format(new Date(expense.date), 'MMM d')}</span>
-                                                <span>•</span>
-                                                <span>{expense.category}</span>
+                        <div className="space-y-0">
+                            {expenses.length === 0 ? (
+                                <p className="text-sm text-center py-4 text-muted-foreground">No expenses logged yet.</p>
+                            ) : (
+                                expenses.slice().reverse().map((expense: any) => (
+                                    <div key={expense.id} className={`group flex items-center justify-between py-3 border-b border-white/5 last:border-0 px-2 -mx-2 rounded-md transition-colors ${selectedExpenses.has(expense.id) ? 'bg-blue-900/10' : 'hover:bg-white/5'}`}>
+                                        <div className="flex items-center gap-3">
+                                            <Checkbox
+                                                checked={selectedExpenses.has(expense.id)}
+                                                onCheckedChange={() => toggleSelect(expense.id)}
+                                            />
+                                            <div>
+                                                <p className="font-medium text-sm text-zinc-200">{expense.description}</p>
+                                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                    <span>{format(new Date(expense.date), 'MMM d')}</span>
+                                                    <span>•</span>
+                                                    <span>{expense.category}</span>
+                                                </div>
                                             </div>
                                         </div>
+                                        <div className="flex items-center gap-4">
+                                            <span className="text-red-400 text-sm font-mono">-${expense.amount.toLocaleString()}</span>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                        <MoreVertical className="h-3 w-3" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => openEditDialog(expense)}>
+                                                        <Pencil className="mr-2 h-3 w-3" /> Edit
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem className="text-red-500 focus:text-white focus:bg-red-600" onClick={() => handleDeleteExpense(expense.id)}>
+                                                        <Trash className="mr-2 h-3 w-3" /> Delete
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </div>
                                     </div>
-                                    <div className="flex items-center gap-4">
-                                        <span className="text-red-400 text-sm font-mono">-${expense.amount.toLocaleString()}</span>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <MoreVertical className="h-3 w-3" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => openEditDialog(expense)}>
-                                                    <Pencil className="mr-2 h-3 w-3" /> Edit
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem className="text-red-500 focus:text-white focus:bg-red-600" onClick={() => handleDeleteExpense(expense.id)}>
-                                                    <Trash className="mr-2 h-3 w-3" /> Delete
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </div>
-                                </div>
-                            ))
-                        )}
+                                ))
+                            )}
+                        </div>
                     </div>
-                </div>
+                )}
             </CardContent>
         </Card >
     )

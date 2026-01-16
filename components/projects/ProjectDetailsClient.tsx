@@ -284,7 +284,9 @@ export function ProjectDetailsClient({ project, documents, latestDocs, userId, i
                                                 <div className="flex flex-col items-center justify-center flex-1 text-center text-muted-foreground min-h-[200px]">
                                                     <FileText className="h-8 w-8 mb-2 opacity-50" />
                                                     <p className="text-sm">No documents generated yet.</p>
-                                                    <p className="text-xs">Create your first permit or bid below.</p>
+                                                    <Button variant="link" onClick={() => setActiveTab('documents')} className="text-blue-500 h-auto p-0 mt-2">
+                                                        Create your first permit or bid
+                                                    </Button>
                                                 </div>
                                             ) : (
                                                 <div className="space-y-4">

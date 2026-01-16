@@ -51,6 +51,7 @@ interface DocumentTableProps {
 }
 
 import { DocumentDetailsSheet } from './DocumentDetailsSheet'
+import { GenerateDocumentGlobalDialog } from './GenerateDocumentGlobalDialog'
 
 export function DocumentTable({ documents }: DocumentTableProps) {
     const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -240,9 +241,14 @@ export function DocumentTable({ documents }: DocumentTableProps) {
             <div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg border-dashed">
                 <FileText className="h-10 w-10 text-muted-foreground mb-4" />
                 <h3 className="text-lg font-semibold">No documents yet</h3>
-                <p className="text-sm text-muted-foreground max-w-sm mt-1">
+                <p className="text-sm text-muted-foreground max-w-sm mt-1 mb-4">
                     Generate pending permits, contracts, or bid packages.
                 </p>
+                <GenerateDocumentGlobalDialog projects={[]} userId="" customTrigger={
+                    <Button>
+                        <FileText className="mr-2 h-4 w-4" /> Generate Document
+                    </Button>
+                } />
             </div>
         )
     }
