@@ -29,7 +29,7 @@ export function ProjectDetailsClient({ project, documents, latestDocs, userId, i
     const [data, setData] = useState({
         milestones: [] as any[],
         expenses: [] as any[],
-        budget: project.budget || 100000, // Fallback/Mock budget if column missing
+        budget: project.budget || 0,
         health: 'On Track',
         completion: 0,
         budgetUsed: 0,
@@ -44,7 +44,7 @@ export function ProjectDetailsClient({ project, documents, latestDocs, userId, i
                 .from('project_milestones')
                 .select('*')
                 .eq('project_id', project.id)
-                .order('start_date', { ascending: true })
+                .order('end_date', { ascending: true })
 
             // Fetch Expenses (Safely - try/catch in case table doesn't exist yet)
             let expenses: any[] = []
@@ -71,13 +71,14 @@ export function ProjectDetailsClient({ project, documents, latestDocs, userId, i
             if (budgetUsed > 90) health = 'At Risk'
             if (project.due_date && new Date(project.due_date) < new Date() && completion < 100) health = 'Delayed'
 
-            // Next Milestone (Find first pending, assuming sorted by date)
-            const nextMilestone = milestones?.find(m => m.status === 'pending') || null
+            // Next Milestone (Find closest deadline)
+            const pendingMilestones = milestones?.filter(m => m.status === 'pending') || []
+            const nextMilestone = pendingMilestones.sort((a, b) => new Date(a.end_date).getTime() - new Date(b.end_date).getTime())[0] || null
 
             setData({
                 milestones: milestones || [],
                 expenses,
-                budget: project.budget || 100000,
+                budget: project.budget || 0,
                 health,
                 completion,
                 budgetUsed,
@@ -255,9 +256,9 @@ export function ProjectDetailsClient({ project, documents, latestDocs, userId, i
                                                         <p className="font-semibold text-sm text-blue-500">Next Milestone</p>
                                                         <h4 className="font-bold text-lg">{data.nextMilestone.title}</h4>
                                                         <p className="text-sm text-muted-foreground">
-                                                            Due in {differenceInDays(new Date(data.nextMilestone.start_date), new Date())} days
+                                                            Due in {differenceInDays(new Date(data.nextMilestone.end_date), new Date().setHours(0, 0, 0, 0))} days
                                                             <span className="mx-2">•</span>
-                                                            {new Date(data.nextMilestone.start_date).toLocaleDateString()}
+                                                            {new Date(data.nextMilestone.end_date).toLocaleDateString()}
                                                         </p>
                                                     </div>
                                                 </div>

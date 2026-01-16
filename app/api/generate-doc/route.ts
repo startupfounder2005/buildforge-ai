@@ -33,7 +33,7 @@ export async function POST(req: Request) {
             startOfMonth.setHours(0, 0, 0, 0)
 
             const { count, error: countError } = await supabase
-                .from('documents')
+                .from('document_generations')
                 .select('*', { count: 'exact', head: true })
                 .eq('user_id', user.id)
                 .gte('created_at', startOfMonth.toISOString())
@@ -302,6 +302,32 @@ export async function POST(req: Request) {
                 console.error("DB Insert Error:", insertError)
             } else {
                 documentId = insertedDoc.id
+
+                // --- 5. Trigger Notification ---
+                try {
+                    await supabase.from('notifications').insert({
+                        user_id: user.id,
+                        type: 'document',
+                        title: 'New Document Generated',
+                        message: `Your ${type} for ${title} is ready.`,
+                        link: `/dashboard/documents?id=${documentId}`, // Or project link
+                        is_read: false
+                    })
+                } catch (notifError) {
+                    console.error("Notification Trigger Failed:", notifError)
+                    // Non-blocking
+                }
+
+                // --- 6. Log Usage (Immutable) ---
+                try {
+                    await supabase.from('document_generations').insert({
+                        user_id: user.id,
+                        project_id: projectId,
+                        document_type: type || 'document'
+                    })
+                } catch (logError) {
+                    console.error("Usage Log Failed:", logError)
+                }
             }
         }
 

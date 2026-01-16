@@ -52,6 +52,7 @@ export function QuickActions({ projects, userId }: QuickActionsProps) {
                         </Button>
                     </Link>
                 </motion.div>
+
             </CardContent>
         </Card>
     )

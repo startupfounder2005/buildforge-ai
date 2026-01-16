@@ -25,7 +25,7 @@ export function RecentActivity({ activities }: RecentActivityProps) {
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="space-y-8">
+                <div className="space-y-8 max-h-[380px] overflow-y-auto pr-2 custom-scrollbar">
                     {activities.length === 0 && (
                         <p className="text-sm text-muted-foreground">No recent activity found.</p>
                     )}

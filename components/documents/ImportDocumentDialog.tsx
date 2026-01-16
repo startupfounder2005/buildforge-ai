@@ -114,8 +114,26 @@ export function ImportDocumentDialog({ projectId, userId, onSuccess }: ImportDoc
                     status: 'Imported',
                     is_official: isOfficial
                 })
+                .select()
+                .single()
 
             if (dbError) throw dbError
+
+            // 3. Trigger Notification
+            const { error: notifError } = await supabase
+                .from('notifications')
+                .insert({
+                    user_id: userId,
+                    type: 'document',
+                    title: 'Document Imported',
+                    message: `Imported "${title}" to project.`,
+                    link: `/dashboard/documents`, // Ideally deeply link if we had ID, but we only have publicUrl easily from storage flow or we need to select back. 
+                    // Actually .select() above is redundant if we don't catch data. 
+                    // Let's assume list view is fine.
+                    is_read: false
+                })
+
+            if (notifError) console.error("Import Notification Error", notifError)
 
             toast.success("Document imported successfully!")
             setOpen(false)

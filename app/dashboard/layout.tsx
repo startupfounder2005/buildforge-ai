@@ -1,5 +1,7 @@
 import { AppSidebar } from "@/components/dashboard/AppSidebar"
 import { GlobalSearch } from "@/components/global/GlobalSearch"
+import { NotificationBell } from "@/components/notifications/NotificationBell"
+import { SubscriptionChecker } from "@/components/subscription/SubscriptionChecker"
 import {
     SidebarProvider,
     SidebarTrigger,
@@ -73,9 +75,7 @@ export default async function DashboardLayout({
                     </div>
 
                     <div className="ml-auto flex items-center gap-2">
-                        <Button variant="ghost" size="icon" className="text-muted-foreground hover:bg-yellow-500 hover:text-black transition-colors">
-                            <Bell className="h-5 w-5" />
-                        </Button>
+                        <NotificationBell />
 
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
@@ -119,6 +119,7 @@ export default async function DashboardLayout({
                     </div>
                 </header>
                 <div className="flex flex-1 flex-col gap-4 p-4 md:p-8">
+                    <SubscriptionChecker />
                     {children}
                 </div>
             </main>

@@ -4,6 +4,7 @@ import { RecentActivity } from "@/components/dashboard/RecentActivity"
 import { UpcomingDeadlines } from "@/components/dashboard/UpcomingDeadlines"
 import { InsightsChart } from "@/components/dashboard/InsightsChart"
 import { QuickActions } from "@/components/dashboard/QuickActions"
+import { MilestoneChecker } from "@/components/dashboard/MilestoneChecker"
 
 export default async function DashboardPage() {
     const supabase = await createClient()
@@ -80,7 +81,7 @@ export default async function DashboardPage() {
             timestamp: d.created_at
         }))
     ].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-        .slice(0, 5)
+        .slice(0, 10)
 
     // Upcoming Deadlines
     // Filter projects with future due_date
@@ -88,7 +89,7 @@ export default async function DashboardPage() {
     const upcomingDeadlines = allProjects
         .filter(p => p.due_date && new Date(p.due_date) > now && p.status !== 'completed')
         .sort((a, b) => new Date(a.due_date!).getTime() - new Date(b.due_date!).getTime())
-        .slice(0, 5)
+        .slice(0, 10)
         .map(p => ({
             id: p.id,
             title: p.name,
@@ -134,6 +135,9 @@ export default async function DashboardPage() {
                     <RecentActivity activities={activityFeed} />
                 </div>
             </div>
+
+            {/* Automated Checks */}
+            <MilestoneChecker userId={user.id} />
         </div>
     )
 }

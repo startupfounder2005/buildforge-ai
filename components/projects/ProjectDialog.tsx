@@ -182,6 +182,22 @@ export function ProjectDialog({ project, open: controlledOpen, onOpenChange: set
                             </div>
                         </div>
 
+                        {/* Budget (Creation Only) */}
+                        {!project && (
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="budget" className="text-right">Budget ($)</Label>
+                                <Input
+                                    id="budget"
+                                    name="budget"
+                                    type="number"
+                                    placeholder="e.g. 100000"
+                                    className="col-span-3 no-spinner"
+                                    min="0"
+                                    step="0.01"
+                                />
+                            </div>
+                        )}
+
                         {/* Due Date (3 Selects) */}
                         <div className="grid grid-cols-4 items-center gap-4">
                             <Label className="text-right ">Due Date</Label>
@@ -243,17 +259,8 @@ export function ProjectDialog({ project, open: controlledOpen, onOpenChange: set
                             </div>
                         </div>
 
-                        {/* Notes */}
-                        <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="notes" className="text-right">Notes</Label>
-                            <Textarea
-                                id="notes"
-                                name="notes"
-                                defaultValue={project?.notes}
-                                placeholder="Internal notes..."
-                                className="col-span-3"
-                            />
-                        </div>
+                        {/* Notes Removed per update */}
+
                     </div>
                     <DialogFooter>
                         <Button type="submit" disabled={loading} className="bg-[#0047AB] hover:bg-[#0055CC] text-white transition-colors">

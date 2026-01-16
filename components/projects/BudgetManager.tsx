@@ -1,5 +1,3 @@
-'use client'
-
 import { useState, useTransition } from 'react'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -8,10 +6,11 @@ import { Progress } from '@/components/ui/progress'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { Plus, DollarSign, TrendingUp, MoreVertical, Pencil, Trash } from 'lucide-react'
-import { updateProjectBudget, addExpense, deleteExpense, updateExpense } from '@/app/dashboard/projects/actions'
+import { Plus, DollarSign, TrendingUp, MoreVertical, Pencil, Trash, CheckSquare } from 'lucide-react'
+import { updateProjectBudget, addExpense, deleteExpense, deleteExpenses, updateExpense } from '@/app/dashboard/projects/actions'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
+import { Checkbox } from "@/components/ui/checkbox"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -40,12 +39,12 @@ export function BudgetManager({ projectId, initialBudget, initialExpenses }: Bud
     const [isExpenseOpen, setIsExpenseOpen] = useState(false)
     const [isEditExpenseOpen, setIsEditExpenseOpen] = useState(false)
     const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+    const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false)
+    const [selectedExpenses, setSelectedExpenses] = useState<Set<string>>(new Set())
     const [isPending, startTransition] = useTransition()
 
-    // Budget State - We use the passed prop which comes from parent state, but we also want local control for immediate feedback/form
-    // Actually, relying on parent props is best if parent handles fetching.
-    // But for the form input we need local state.
-    const [localBudgetInput, setLocalBudgetInput] = useState(initialBudget)
+    // Budget State
+    const [localBudgetInput, setLocalBudgetInput] = useState(initialBudget?.toString() || '')
 
     // Expense Add State
     const [newExpense, setNewExpense] = useState({
@@ -63,7 +62,9 @@ export function BudgetManager({ projectId, initialBudget, initialExpenses }: Bud
     const budget = initialBudget || 0
     const remaining = budget - totalExpenses
     const usage = budget > 0 ? (totalExpenses / budget) * 100 : 0
-    const runRate = budget > 0 ? (totalExpenses / budget) : 0
+    // "Run Rate" is actually just usage %, renaming display for clarity or keeping logical var same
+    // User asked "what is run rate", so we should clarify implementation or rename UI.
+    // I will rename the UI label to "% Spent" to be accurate.
 
     const handleUpdateBudget = async () => {
         startTransition(async () => {
@@ -127,6 +128,46 @@ export function BudgetManager({ projectId, initialBudget, initialExpenses }: Bud
             if (res.message === 'Success') {
                 toast.success('Expense deleted')
                 setDeleteConfirmId(null)
+                // Remove from selection if it was selected
+                const newSelected = new Set(selectedExpenses)
+                newSelected.delete(deleteConfirmId)
+                setSelectedExpenses(newSelected)
+            } else {
+                toast.error(res.message)
+            }
+        })
+    }
+
+    // --- Bulk Selection Logic ---
+    const toggleSelect = (id: string) => {
+        const newSet = new Set(selectedExpenses)
+        if (newSet.has(id)) {
+            newSet.delete(id)
+        } else {
+            newSet.add(id)
+        }
+        setSelectedExpenses(newSet)
+    }
+
+    const toggleSelectAll = () => {
+        if (selectedExpenses.size === expenses.length && expenses.length > 0) {
+            setSelectedExpenses(new Set())
+        } else {
+            const newSet = new Set<string>()
+            expenses.forEach((e: any) => newSet.add(e.id))
+            setSelectedExpenses(newSet)
+        }
+    }
+
+    const executeBulkDelete = async () => {
+        if (selectedExpenses.size === 0) return
+        startTransition(async () => {
+            const ids = Array.from(selectedExpenses)
+            const res = await deleteExpenses(ids)
+            if (res.message === 'Success') {
+                toast.success(`${ids.length} expenses deleted`)
+                setBulkDeleteConfirmOpen(false)
+                setSelectedExpenses(new Set())
             } else {
                 toast.error(res.message)
             }
@@ -151,10 +192,23 @@ export function BudgetManager({ projectId, initialBudget, initialExpenses }: Bud
                     </CardTitle>
                     <CardDescription>Track project financials.</CardDescription>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
+                    {/* Bulk Delete Button */}
+                    {selectedExpenses.size > 0 && (
+                        <Button
+                            variant="destructive"
+                            size="sm"
+                            className="h-9 px-3 text-xs"
+                            onClick={() => setBulkDeleteConfirmOpen(true)}
+                        >
+                            <Trash className="h-3.5 w-3.5 mr-1.5" />
+                            Delete ({selectedExpenses.size})
+                        </Button>
+                    )}
+
                     <Dialog open={isBudgetOpen} onOpenChange={(open) => {
                         setIsBudgetOpen(open)
-                        if (open) setLocalBudgetInput(budget)
+                        if (open) setLocalBudgetInput(budget.toString())
                     }}>
                         <DialogTrigger asChild>
                             <Button variant="outline" className="h-9 px-3 text-xs font-medium border-zinc-700 bg-zinc-900/50 hover:bg-zinc-800 text-zinc-300 hover:text-white">Set Budget</Button>
@@ -169,7 +223,15 @@ export function BudgetManager({ projectId, initialBudget, initialExpenses }: Bud
                                     <Input
                                         type="number"
                                         value={localBudgetInput}
-                                        onChange={(e) => setLocalBudgetInput(Number(e.target.value))}
+                                        onChange={(e) => {
+                                            const val = e.target.value
+                                            // Handle leading zeros for better UX
+                                            if (val.length > 1 && val.startsWith('0')) {
+                                                setLocalBudgetInput(val.replace(/^0+/, ''))
+                                            } else {
+                                                setLocalBudgetInput(val)
+                                            }
+                                        }}
                                         placeholder="e.g. 100000"
                                         className="no-spinner"
                                     />
@@ -260,6 +322,21 @@ export function BudgetManager({ projectId, initialBudget, initialExpenses }: Bud
                         </AlertDialogContent>
                     </AlertDialog>
 
+                    <AlertDialog open={bulkDeleteConfirmOpen} onOpenChange={setBulkDeleteConfirmOpen}>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Delete {selectedExpenses.size} Expenses?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This action cannot be undone. These expenses will be permanently removed.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={executeBulkDelete} className="bg-red-600 hover:bg-red-700">Delete All</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+
                     {/* Edit Dialog */}
                     <Dialog open={isEditExpenseOpen} onOpenChange={setIsEditExpenseOpen}>
                         <DialogContent>
@@ -324,32 +401,61 @@ export function BudgetManager({ projectId, initialBudget, initialExpenses }: Bud
                 </div>
             </CardHeader>
             <CardContent className="space-y-6">
-                <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Spent</span>
-                        <span className="font-medium">${totalExpenses.toLocaleString()} of ${budget.toLocaleString()}</span>
-                    </div>
-                    <Progress value={usage} className={`h-2 ${usage > 90 ? 'bg-red-900/20' : 'bg-secondary'}`} indicatorClassName={`${usage > 90 ? 'bg-red-500' : 'bg-blue-600'}`} />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="rounded-lg bg-zinc-900/50 p-4 border border-zinc-800">
-                        <p className="text-xs text-muted-foreground mb-1">Remaining</p>
-                        <p className={`text-2xl font-bold ${remaining < 0 ? 'text-red-500' : 'text-white'}`}>${remaining.toLocaleString()}</p>
-                    </div>
-                    <div className="rounded-lg bg-zinc-900/50 p-4 border border-zinc-800">
-                        <p className="text-xs text-muted-foreground mb-1">Run Rate</p>
-                        <div className="flex items-center gap-1">
-                            <TrendingUp className="h-4 w-4 text-blue-500" />
-                            <p className="text-sm font-medium">{runRate.toFixed(1)}%</p>
+                {budget > 0 ? (
+                    <>
+                        <div className="space-y-2">
+                            <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">Spent</span>
+                                <span className="font-medium">${totalExpenses.toLocaleString()} of ${budget.toLocaleString()}</span>
+                            </div>
+                            <Progress value={usage} className={`h-2 ${usage > 90 ? 'bg-red-900/20' : 'bg-secondary'}`} indicatorClassName={`${usage > 90 ? 'bg-red-500' : 'bg-blue-600'}`} />
                         </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="rounded-lg bg-zinc-900/50 p-4 border border-zinc-800">
+                                <p className="text-xs text-muted-foreground mb-1">Remaining</p>
+                                <p className={`text-2xl font-bold ${remaining < 0 ? 'text-red-500' : 'text-white'}`}>${remaining.toLocaleString()}</p>
+                            </div>
+                            <div className="rounded-lg bg-zinc-900/50 p-4 border border-zinc-800">
+                                <p className="text-xs text-muted-foreground mb-1">% Utilized</p>
+                                <div className="flex items-center gap-1">
+                                    <TrendingUp className="h-4 w-4 text-blue-500" />
+                                    <p className="text-sm font-medium">{usage.toFixed(1)}%</p>
+                                </div>
+                            </div>
+                        </div>
+                    </>
+                ) : (
+                    <div className="rounded-lg bg-zinc-900/30 p-6 border border-zinc-800/10 border-dashed text-center">
+                        <p className="text-muted-foreground text-sm">No budget set for this project.</p>
+                        <Button
+                            variant="link"
+                            className="text-blue-500 h-auto p-0 text-xs mt-1"
+                            onClick={() => {
+                                setLocalBudgetInput('')
+                                setIsBudgetOpen(true)
+                            }}
+                        >
+                            Set a Budget
+                        </Button>
                     </div>
-                </div>
+                )}
 
                 <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <ClockIcon />
-                        <span>Recent Expenses</span>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground justify-between">
+                        <div className="flex items-center gap-2">
+                            <ClockIcon />
+                            <span>Recent Expenses</span>
+                        </div>
+                        {expenses.length > 0 && (
+                            <div className="flex items-center gap-2">
+                                <Checkbox
+                                    checked={selectedExpenses.size === expenses.length && expenses.length > 0}
+                                    onCheckedChange={toggleSelectAll}
+                                />
+                                <span className="text-xs">Select All</span>
+                            </div>
+                        )}
                     </div>
 
                     <div className="space-y-0">
@@ -357,13 +463,19 @@ export function BudgetManager({ projectId, initialBudget, initialExpenses }: Bud
                             <p className="text-sm text-center py-4 text-muted-foreground">No expenses logged yet.</p>
                         ) : (
                             expenses.slice().reverse().map((expense: any) => (
-                                <div key={expense.id} className="group flex items-center justify-between py-3 border-b border-white/5 last:border-0 hover:bg-white/5 px-2 -mx-2 rounded-md transition-colors">
-                                    <div>
-                                        <p className="font-medium text-sm text-zinc-200">{expense.description}</p>
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                            <span>{format(new Date(expense.date), 'MMM d')}</span>
-                                            <span>•</span>
-                                            <span>{expense.category}</span>
+                                <div key={expense.id} className={`group flex items-center justify-between py-3 border-b border-white/5 last:border-0 px-2 -mx-2 rounded-md transition-colors ${selectedExpenses.has(expense.id) ? 'bg-blue-900/10' : 'hover:bg-white/5'}`}>
+                                    <div className="flex items-center gap-3">
+                                        <Checkbox
+                                            checked={selectedExpenses.has(expense.id)}
+                                            onCheckedChange={() => toggleSelect(expense.id)}
+                                        />
+                                        <div>
+                                            <p className="font-medium text-sm text-zinc-200">{expense.description}</p>
+                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                <span>{format(new Date(expense.date), 'MMM d')}</span>
+                                                <span>•</span>
+                                                <span>{expense.category}</span>
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-4">
@@ -390,7 +502,7 @@ export function BudgetManager({ projectId, initialBudget, initialExpenses }: Bud
                     </div>
                 </div>
             </CardContent>
-        </Card>
+        </Card >
     )
 }
 

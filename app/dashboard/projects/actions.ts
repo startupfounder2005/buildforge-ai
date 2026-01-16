@@ -12,6 +12,7 @@ const projectSchema = z.object({
     status: z.string().optional(), // Added status
     notes: z.string().optional(), // Added notes
     due_date: z.string().optional().nullable(), // Added due_date as optional string
+    budget: z.string().optional(), // Added budget
 })
 
 export async function createProject(prevState: any, formData: FormData) {
@@ -24,6 +25,7 @@ export async function createProject(prevState: any, formData: FormData) {
         status: formData.get('status'),
         notes: formData.get('notes'),
         due_date: formData.get('due_date'),
+        budget: formData.get('budget'),
     }
 
     const validatedFields = projectSchema.safeParse(rawData)
@@ -50,17 +52,22 @@ export async function createProject(prevState: any, formData: FormData) {
     const isPro = profile?.subscription_tier === 'pro'
 
     if (!isPro) {
+        const startOfMonth = new Date()
+        startOfMonth.setDate(1)
+        startOfMonth.setHours(0, 0, 0, 0)
+
         const { count, error: countError } = await supabase
-            .from('projects')
+            .from('project_generations')
             .select('*', { count: 'exact', head: true })
             .eq('user_id', user.id)
+            .gte('created_at', startOfMonth.toISOString())
 
         if (countError) {
             return { message: 'Database Error: Failed to check project limit.' }
         }
 
         if (count !== null && count >= 1) {
-            return { message: 'Free plan limited to 1 project. Upgrade to Pro for unlimited projects.' }
+            return { message: 'Free plan limited to 1 new project per month. Upgrade to Pro for unlimited.' }
         }
     }
 
@@ -73,7 +80,8 @@ export async function createProject(prevState: any, formData: FormData) {
             description: validatedFields.data.description,
             status: validatedFields.data.status || 'planning',
             notes: validatedFields.data.notes,
-            due_date: validatedFields.data.due_date ? validatedFields.data.due_date : null
+            due_date: validatedFields.data.due_date ? validatedFields.data.due_date : null,
+            budget: validatedFields.data.budget ? Number(validatedFields.data.budget) : 0
         })
         .select()
         .single()
@@ -90,6 +98,13 @@ export async function createProject(prevState: any, formData: FormData) {
             content: validatedFields.data.notes
         })
     }
+
+    // Log Usage (Immutable)
+    await supabase.from('project_generations').insert({
+        user_id: user.id,
+        project_id: newProject.id,
+        project_name: newProject.name
+    })
 
     revalidatePath('/dashboard/projects')
     return { message: 'Success' }
@@ -245,12 +260,36 @@ export async function createMilestone(projectId: string, title: string, start: s
     return { message: 'Success' }
 }
 
-export async function updateMilestoneDates(id: string, start: string, end: string) {
+export async function updateMilestone(id: string, title: string, start: string, end: string) {
     const supabase = await createClient()
     const { error } = await supabase
         .from('project_milestones')
-        .update({ start_date: start, end_date: end })
+        .update({ title, start_date: start, end_date: end })
         .eq('id', id)
+
+    if (error) return { message: error.message }
+    revalidatePath('/dashboard/projects')
+    return { message: 'Success' }
+}
+
+export async function deleteMilestone(id: string) {
+    const supabase = await createClient()
+    const { error } = await supabase
+        .from('project_milestones')
+        .delete()
+        .eq('id', id)
+
+    if (error) return { message: error.message }
+    revalidatePath('/dashboard/projects')
+    return { message: 'Success' }
+}
+
+export async function deleteMilestones(ids: string[]) {
+    const supabase = await createClient()
+    const { error } = await supabase
+        .from('project_milestones')
+        .delete()
+        .in('id', ids)
 
     if (error) return { message: error.message }
     revalidatePath('/dashboard/projects')
@@ -263,6 +302,18 @@ export async function updateMilestoneStatus(id: string, status: string) {
         .from('project_milestones')
         .update({ status })
         .eq('id', id)
+
+    if (error) return { message: error.message }
+    revalidatePath('/dashboard/projects')
+    return { message: 'Success' }
+}
+
+export async function updateMilestonesStatusBulk(ids: string[], status: string) {
+    const supabase = await createClient()
+    const { error } = await supabase
+        .from('project_milestones')
+        .update({ status })
+        .in('id', ids)
 
     if (error) return { message: error.message }
     revalidatePath('/dashboard/projects')
@@ -283,18 +334,90 @@ export async function updateProjectBudget(projectId: string, amount: number) {
 
 export async function addExpense(projectId: string, expense: { description: string, amount: number, category: string, date: string }) {
     const supabase = await createClient()
-    const { error } = await supabase
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { message: 'Unauthorized' }
+
+    const { data: insertedExpenseData, error } = await supabase
         .from('project_expenses')
         .insert([{
             project_id: projectId,
             description: expense.description,
             amount: expense.amount,
             category: expense.category,
-            date: expense.date // Ensure your DB accepts string date or cast it
+            date: expense.date
         }])
+        .select('id, amount') // Select id and amount to use later
 
     if (error) return { message: error.message }
+
+    const newExpenseId = insertedExpenseData ? insertedExpenseData[0]?.id : null;
+    const newExpenseAmount = insertedExpenseData ? Number(insertedExpenseData[0]?.amount) : 0;
+
+    // --- Budget Calculation & Consistency Check ---
+    try {
+        const { data: projectData } = await supabase
+            .from('projects')
+            .select('budget')
+            .eq('id', projectId)
+            .single()
+
+        const { data: expensesData } = await supabase
+            .from('project_expenses')
+            .select('id, amount')
+            .eq('project_id', projectId)
+
+        if (projectData && projectData.budget > 0) {
+            const budget = Number(projectData.budget)
+            const expenses = expensesData || []
+
+            let total = expenses.reduce((sum, item) => sum + (Number(item.amount) || 0), 0)
+            if (newExpenseId && !expenses.some(item => item.id === newExpenseId)) {
+                total += newExpenseAmount
+            }
+
+            const currentUsage = (total / budget) * 100
+            const previousTotal = total - newExpenseAmount
+            const previousUsage = (previousTotal / budget) * 100
+
+            // Check for threshold crossings (90, 95, 100)
+            const thresholds = [90, 95, 100]
+            const crossedThreshold = thresholds.find(t => previousUsage < t && currentUsage >= t)
+
+            if (crossedThreshold) {
+                let alertTitle = 'Budget Threshold Warning'
+                if (crossedThreshold === 100) alertTitle = 'Budget Critical: Limit Exceeded'
+                else if (crossedThreshold === 95) alertTitle = 'Budget Alert: 95% Used'
+
+                await supabase.from('notifications').insert({
+                    user_id: user.id,
+                    type: 'budget',
+                    title: alertTitle,
+                    message: `Project budget usage has hit ${crossedThreshold}%. Spent: $${total.toLocaleString()} of $${budget.toLocaleString()}`,
+                    link: `/dashboard/projects/${projectId}?tab=budget`,
+                    is_read: false
+                })
+            }
+        }
+    } catch (e: any) {
+        console.error("Budget Calc Error", e)
+    }
+
+    // --- 1. Expense Logged Notification (Sent LAST) ---
+    try {
+        await supabase.from('notifications').insert({
+            user_id: user.id,
+            type: 'budget',
+            title: 'Expense Logged',
+            message: `$${expense.amount.toLocaleString()} for ${expense.description}`,
+            link: `/dashboard/projects/${projectId}?tab=budget`,
+            is_read: false
+        })
+    } catch (e: any) {
+        console.error("Expense Notif Exception", e)
+    }
+
     revalidatePath(`/dashboard/projects/${projectId}`)
+
     return { message: 'Success' }
 }
 
@@ -324,5 +447,36 @@ export async function updateExpense(id: string, expense: { description: string, 
 
     if (error) return { message: error.message }
     revalidatePath('/dashboard/projects')
+    return { message: 'Success' }
+}
+
+export async function deleteExpenses(ids: string[]) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { message: 'Unauthorized' }
+
+    const { error } = await supabase
+        .from('project_expenses')
+        .delete()
+        .in('id', ids)
+
+    if (error) return { message: error.message }
+    revalidatePath('/dashboard/projects')
+    return { message: 'Success' }
+}
+
+export async function deleteDocuments(ids: string[]) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return { message: 'Unauthorized' }
+
+    const { error } = await supabase
+        .from('documents')
+        .delete()
+        .in('id', ids)
+
+    if (error) return { message: error.message }
+    revalidatePath('/dashboard/projects')
+    revalidatePath('/dashboard/documents')
     return { message: 'Success' }
 }

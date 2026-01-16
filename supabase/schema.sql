@@ -188,4 +188,84 @@ create policy "Anyone can upload an avatar."
 create policy "Anyone can update an avatar."
   on storage.objects for update
   with check ( bucket_id = 'avatars' );
+
+
+-- NOTIFICATIONS TABLE
+create table if not exists public.notifications (
+  id uuid default uuid_generate_v4() primary key,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  type text not null, -- 'document', 'milestone', 'budget', 'team', 'system'
+  title text not null,
+  message text,
+  link text,
+  is_read boolean default false,
+  created_at timestamptz default now()
+);
+
+-- RLS for Notifications
+alter table public.notifications enable row level security;
+
+drop policy if exists "Users can view own notifications" on public.notifications;
+create policy "Users can view own notifications"
+  on public.notifications for select
+  using ( auth.uid() = user_id );
+
+drop policy if exists "Users can update own notifications" on public.notifications;
+create policy "Users can update own notifications"
+  on public.notifications for update
+  using ( auth.uid() = user_id );
+
+drop policy if exists "Users can insert own notifications" on public.notifications;
+create policy "Users can insert own notifications"
+  on public.notifications for insert
+  with check ( auth.uid() = user_id );
+
+-- Indexes for performance
+create index if not exists notifications_user_id_idx on public.notifications(user_id);
+create index if not exists notifications_is_read_idx on public.notifications(is_read);
+
+
+-- DOCUMENT GENERATIONS (Immutable Usage Log)
+create table if not exists public.document_generations (
+  id uuid default uuid_generate_v4() primary key,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  project_id uuid references public.projects(id) on delete set null,
+  document_type text not null,
+  created_at timestamptz default now()
+);
+
+alter table public.document_generations enable row level security;
+
+create policy "Users can view own generations"
+  on public.document_generations for select
+  using ( auth.uid() = user_id );
+
+create policy "System can insert generations"
+  on public.document_generations for insert
+  with check ( auth.uid() = user_id );
+
+-- Index for usage counting
+create index if not exists document_generations_usage_idx on public.document_generations(user_id, created_at);
+
+
+-- PROJECT GENERATIONS (Immutable Usage Log)
+create table if not exists public.project_generations (
+  id uuid default uuid_generate_v4() primary key,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  project_id uuid references public.projects(id) on delete set null,
+  project_name text,
+  created_at timestamptz default now()
+);
+
+alter table public.project_generations enable row level security;
+
+create policy "Users can view own project generations"
+  on public.project_generations for select
+  using ( auth.uid() = user_id );
+
+create policy "System can insert project generations"
+  on public.project_generations for insert
+  with check ( auth.uid() = user_id );
+
+create index if not exists project_generations_usage_idx on public.project_generations(user_id, created_at);
  

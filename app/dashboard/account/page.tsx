@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 export default async function AccountPage({
     searchParams,
 }: {
-    searchParams: Promise<{ tab?: string }>
+    searchParams: Promise<{ tab?: string; success?: string; canceled?: string }>
 }) {
     // Await params/searchParams in Next.js 15+ if needed, though type implies it might be a Promise or standard object depending on version. 
     // The previous file had it as `{ tab?: string }`, but to be safe and consistent with previous project file which used Promise, I will check.
@@ -28,6 +28,42 @@ export default async function AccountPage({
 
     if (!user) {
         redirect('/login')
+    }
+
+    // Manual Sync on Success Return (Handling missing webhooks in dev)
+    if (params?.success === 'true') {
+        // Fetch fresh profile to get customer ID and current status
+        const { data: p } = await supabase
+            .from('profiles')
+            .select('stripe_customer_id, subscription_tier')
+            .eq('id', user.id)
+            .single()
+
+        if (p?.stripe_customer_id) {
+            const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY)
+            try {
+                const subscriptions = await stripe.subscriptions.list({
+                    customer: p.stripe_customer_id,
+                    status: 'active',
+                    limit: 1
+                })
+
+                // Only update and notify if not already Pro (prevents duplicate notifs on refresh)
+                if (subscriptions.data.length > 0 && p.subscription_tier !== 'pro') {
+                    await supabase.from('profiles').update({ subscription_tier: 'pro' }).eq('id', user.id)
+
+                    await supabase.from('notifications').insert({
+                        user_id: user.id,
+                        type: 'system',
+                        title: 'Welcome to Pro! 🚀',
+                        message: 'Your subscription has been successfully upgraded. Enjoy unlimited access.',
+                        link: '/dashboard/account'
+                    })
+                }
+            } catch (e) {
+                console.error('Failed to sync subscription:', e)
+            }
+        }
     }
 
     // Fetch Profile

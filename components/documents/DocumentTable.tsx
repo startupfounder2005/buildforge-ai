@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import {
     Table,
     TableBody,
@@ -11,7 +11,8 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { FileText, Download, Eye, MoreHorizontal, Trash2, Loader2, X, Info } from "lucide-react"
+import { FileText, Download, Eye, MoreHorizontal, Trash2, Loader2, X, Info, CheckSquare } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -29,9 +30,10 @@ import {
 } from "@/components/ui/dialog"
 import { format } from "date-fns"
 import { toast } from "sonner"
-import { deleteDocument } from "@/app/dashboard/projects/actions"
+import { deleteDocument, deleteDocuments } from "@/app/dashboard/projects/actions"
 import { jsPDF } from "jspdf"
 import ReactMarkdown from 'react-markdown'
+import { AnimatePresence, motion } from 'framer-motion'
 
 import {
     AlertDialog,
@@ -57,9 +59,51 @@ export function DocumentTable({ documents }: DocumentTableProps) {
     const [detailsDoc, setDetailsDoc] = useState<any | null>(null)
     const [docs, setDocs] = useState(documents)
 
+    // Bulk Selection State
+    const [selectedDocIds, setSelectedDocIds] = useState<string[]>([])
+    const [confirmBulkDelete, setConfirmBulkDelete] = useState(false)
+    const [isBulkDeleting, setIsBulkDeleting] = useState(false)
+    const [isPending, startTransition] = useTransition()
+
     useEffect(() => {
         setDocs(documents)
     }, [documents])
+
+    // --- Selection Logic ---
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) {
+            setSelectedDocIds(docs.map(d => d.id))
+        } else {
+            setSelectedDocIds([])
+        }
+    }
+
+    const toggleSelection = (id: string) => {
+        setSelectedDocIds(prev =>
+            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+        )
+    }
+
+    const executeBulkDelete = async () => {
+        if (selectedDocIds.length === 0) return
+        setIsBulkDeleting(true)
+        try {
+            const res = await deleteDocuments(selectedDocIds)
+            if (res.message === 'Success') {
+                toast.success(`${selectedDocIds.length} documents deleted`)
+                // Optimistic UI update or wait for prop update
+                setDocs(prev => prev.filter(d => !selectedDocIds.includes(d.id)))
+                setSelectedDocIds([])
+            } else {
+                toast.error(res.message)
+            }
+        } catch (e) {
+            toast.error("Failed to delete.")
+        } finally {
+            setIsBulkDeleting(false)
+            setConfirmBulkDelete(false)
+        }
+    }
 
     const handleDeleteClick = (id: string) => {
         setConfirmDeleteId(id)
@@ -72,6 +116,9 @@ export function DocumentTable({ documents }: DocumentTableProps) {
             const res = await deleteDocument(confirmDeleteId)
             if (res.message === 'Success') {
                 toast.success('Document deleted')
+                setDocs(prev => prev.filter(d => d.id !== confirmDeleteId))
+                // Remove from selection if present
+                setSelectedDocIds(prev => prev.filter(id => id !== confirmDeleteId))
             } else {
                 toast.error(res.message)
             }
@@ -201,104 +248,146 @@ export function DocumentTable({ documents }: DocumentTableProps) {
     }
 
     return (
-        <div className="rounded-md border">
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Document Name</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Version</TableHead>
-                        <TableHead>Created At</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {docs.map((doc) => (
-                        <TableRow key={doc.id} className="group hover:bg-muted/50 transition-colors">
-                            <TableCell className="font-medium">
-                                <div className="flex items-center gap-2">
-                                    <FileText className="h-4 w-4 text-blue-500" />
-                                    <span
-                                        className="cursor-pointer hover:underline decoration-blue-500/50 underline-offset-4 transition-all"
-                                        onClick={() => {
-                                            if (doc.file_url) {
-                                                window.open(doc.file_url, '_blank')
-                                            } else {
-                                                setPreviewDoc(doc)
-                                            }
-                                        }}
-                                    >
-                                        {doc.title}
-                                    </span>
-                                    <Button
-                                        size="icon"
-                                        variant="ghost"
-                                        className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity ml-1 hover:bg-zinc-200 dark:hover:bg-zinc-700"
-                                        onClick={(e) => { e.stopPropagation(); setDetailsDoc(doc); }}
-                                    >
-                                        <Info className="h-3 w-3 text-muted-foreground dark:text-zinc-300" />
-                                    </Button>
-                                </div>
-                            </TableCell>
-                            <TableCell className="capitalize">{doc.type}</TableCell>
-                            <TableCell>
-                                <Badge variant={doc.status === 'approved' ? 'default' : 'secondary'}>
-                                    {doc.status || 'Draft'}
-                                </Badge>
-                            </TableCell>
-                            <TableCell>v{doc.version || 1}</TableCell>
-                            <TableCell>{format(new Date(doc.created_at), 'MMM dd, yyyy')}</TableCell>
-                            <TableCell className="text-right">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" className="h-8 w-8 p-0">
-                                            <span className="sr-only">Open menu</span>
-                                            <MoreHorizontal className="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                        <DropdownMenuItem
-                                            className="focus:bg-zinc-800 focus:text-white cursor-pointer"
+        <div className="space-y-4">
+            {/* Bulk Actions Header */}
+            <AnimatePresence>
+                {selectedDocIds.length > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -20, height: 0 }}
+                        animate={{ opacity: 1, y: 0, height: 'auto' }}
+                        exit={{ opacity: 0, y: -20, height: 0 }}
+                        className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2 px-4 flex items-center justify-between mb-2"
+                    >
+                        <span className="text-sm font-medium text-blue-400">
+                            {selectedDocIds.length} selected
+                        </span>
+                        <Button
+                            size="sm"
+                            variant="destructive"
+                            className="h-8 text-xs"
+                            onClick={() => setConfirmBulkDelete(true)}
+                        >
+                            <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                            Delete Selected
+                        </Button>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            <div className="rounded-md border">
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead className="w-[40px]">
+                                <Checkbox
+                                    checked={selectedDocIds.length === docs.length && docs.length > 0}
+                                    onCheckedChange={(checked) => handleSelectAll(checked as boolean)}
+                                />
+                            </TableHead>
+                            <TableHead>Document Name</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Version</TableHead>
+                            <TableHead>Created At</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {docs.map((doc) => (
+                            <TableRow
+                                key={doc.id}
+                                className={`group transition-colors ${selectedDocIds.includes(doc.id) ? 'bg-blue-900/10' : 'hover:bg-muted/50'}`}
+                            >
+                                <TableCell>
+                                    <Checkbox
+                                        checked={selectedDocIds.includes(doc.id)}
+                                        onCheckedChange={() => toggleSelection(doc.id)}
+                                    />
+                                </TableCell>
+                                <TableCell className="font-medium">
+                                    <div className="flex items-center gap-2">
+                                        <FileText className="h-4 w-4 text-blue-500" />
+                                        <span
+                                            className="cursor-pointer hover:underline decoration-blue-500/50 underline-offset-4 transition-all"
                                             onClick={() => {
                                                 if (doc.file_url) {
                                                     window.open(doc.file_url, '_blank')
                                                 } else {
-                                                    setPreviewDoc(doc) // Standard preview
+                                                    setPreviewDoc(doc)
                                                 }
                                             }}
                                         >
-                                            {doc.file_url ? (
-                                                <><Eye className="mr-2 h-4 w-4" /> View Original</>
-                                            ) : (
-                                                <><Eye className="mr-2 h-4 w-4" /> Preview PDF</>
-                                            )}
-                                        </DropdownMenuItem>
-                                        {!doc.file_url && (
-                                            <DropdownMenuItem
-                                                className="focus:bg-blue-600 focus:text-white cursor-pointer"
-                                                onClick={() => handleDownload(doc)}
-                                            >
-                                                <Download className="mr-2 h-4 w-4" /> Download PDF
-                                            </DropdownMenuItem>
-                                        )}
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem
-                                            className="text-red-600 focus:bg-red-600 focus:text-white cursor-pointer"
-                                            onClick={() => handleDeleteClick(doc.id)}
-                                            disabled={deletingId === doc.id}
+                                            {doc.title}
+                                        </span>
+                                        <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity ml-1 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+                                            onClick={(e) => { e.stopPropagation(); setDetailsDoc(doc); }}
                                         >
-                                            {deletingId === doc.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                                            Delete
-                                        </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
+                                            <Info className="h-3 w-3 text-muted-foreground dark:text-zinc-300" />
+                                        </Button>
+                                    </div>
+                                </TableCell>
+                                <TableCell className="capitalize">{doc.type}</TableCell>
+                                <TableCell>
+                                    <Badge variant={doc.status === 'approved' ? 'default' : 'secondary'}>
+                                        {doc.status || 'Draft'}
+                                    </Badge>
+                                </TableCell>
+                                <TableCell>v{doc.version || 1}</TableCell>
+                                <TableCell>{format(new Date(doc.created_at), 'MMM dd, yyyy')}</TableCell>
+                                <TableCell className="text-right">
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                                <span className="sr-only">Open menu</span>
+                                                <MoreHorizontal className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                            <DropdownMenuItem
+                                                className="focus:bg-zinc-800 focus:text-white cursor-pointer"
+                                                onClick={() => {
+                                                    if (doc.file_url) {
+                                                        window.open(doc.file_url, '_blank')
+                                                    } else {
+                                                        setPreviewDoc(doc) // Standard preview
+                                                    }
+                                                }}
+                                            >
+                                                {doc.file_url ? (
+                                                    <><Eye className="mr-2 h-4 w-4" /> View Original</>
+                                                ) : (
+                                                    <><Eye className="mr-2 h-4 w-4" /> Preview PDF</>
+                                                )}
+                                            </DropdownMenuItem>
+                                            {!doc.file_url && (
+                                                <DropdownMenuItem
+                                                    className="focus:bg-blue-600 focus:text-white cursor-pointer"
+                                                    onClick={() => handleDownload(doc)}
+                                                >
+                                                    <Download className="mr-2 h-4 w-4" /> Download PDF
+                                                </DropdownMenuItem>
+                                            )}
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem
+                                                className="text-red-600 focus:bg-red-600 focus:text-white cursor-pointer"
+                                                onClick={() => handleDeleteClick(doc.id)}
+                                                disabled={deletingId === doc.id}
+                                            >
+                                                {deletingId === doc.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                                                Delete
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
 
             <Dialog open={!!previewDoc} onOpenChange={(open) => !open && setPreviewDoc(null)}>
                 <DialogContent className="max-w-5xl h-[90vh] flex flex-col p-0 gap-0 bg-zinc-900 border-zinc-800 text-zinc-100 overflow-hidden outline-none">
@@ -367,6 +456,23 @@ export function DocumentTable({ documents }: DocumentTableProps) {
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={executeDelete} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            <AlertDialog open={confirmBulkDelete} onOpenChange={setConfirmBulkDelete}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete {selectedDocIds.length} Documents?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. These documents will be permanently removed.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={executeBulkDelete} className="bg-red-600 hover:bg-red-700">
+                            {isBulkDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Delete All'}
+                        </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
