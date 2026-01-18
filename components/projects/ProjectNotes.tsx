@@ -337,8 +337,8 @@ export function ProjectNotes({ projectId }: ProjectNotesProps) {
                             </Button>
                         </>
                     )}
-                    <Button onClick={() => setOpen(true)}>
-                        <Plus className="mr-2 h-4 w-4" /> Add Note
+                    <Button onClick={() => setOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white gap-2 shadow-lg shadow-blue-900/20">
+                        <Plus className="h-4 w-4" /> Add Note
                     </Button>
                 </div>
 

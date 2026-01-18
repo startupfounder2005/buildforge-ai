@@ -1,7 +1,7 @@
 'use client'
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback, memo } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Plus, Loader2, Calendar, CheckCircle, MoreVertical, Sparkles, Trash2, CheckSquare, XSquare } from "lucide-react"
@@ -12,7 +12,6 @@ import {
     DialogFooter,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -50,6 +49,100 @@ interface ProjectTimelineProps {
     project: any
 }
 
+// Memoized Milestone Item Component
+const MilestoneItem = memo(({
+    m,
+    i,
+    isNext,
+    isSelected,
+    onToggleSelect,
+    onStatusToggle,
+    onEdit,
+    onDelete
+}: {
+    m: any,
+    i: number,
+    isNext: boolean,
+    isSelected: boolean,
+    onToggleSelect: (id: string) => void,
+    onStatusToggle: (id: string, status: string) => void,
+    onEdit: (m: any) => void,
+    onDelete: (id: string) => void
+}) => {
+    const isCompleted = m.status === 'completed'
+    const isPast = new Date(m.end_date) < new Date() && !isCompleted
+    const duration = differenceInDays(new Date(m.end_date), new Date(m.start_date)) + 1
+
+    return (
+        <motion.div
+            layout
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: Math.min(i * 0.03, 0.3), duration: 0.2 }}
+            className="relative pl-8 pb-8 last:pb-2 group"
+        >
+            {/* Timeline Connector */}
+            <div className={`absolute -left-[29px] top-6 h-4 w-4 rounded-full border-4 ${isCompleted ? 'bg-blue-500 border-zinc-950' : isNext ? 'bg-yellow-400 animate-pulse border-zinc-950' : 'bg-zinc-800 border-zinc-950 ring-1 ring-zinc-800'}`} />
+
+            <div className={`flex items-start gap-3 p-4 rounded-xl border transition-all duration-200 ${isCompleted ? 'bg-zinc-900/30 border-zinc-800' : isNext ? 'bg-blue-500/5 border-blue-500/20' : 'bg-card border-zinc-800 hover:border-zinc-700'}`}>
+                {/* Row Checkbox */}
+                <div className="mt-1">
+                    <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={() => onToggleSelect(m.id)}
+                    />
+                </div>
+
+                <div className="flex-1 flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-4 flex-1">
+                        <div
+                            className={`mt-1 cursor-pointer transition-colors p-1 rounded-full hover:bg-zinc-800 ${isCompleted ? 'text-emerald-500' : 'text-zinc-500'}`}
+                            onClick={() => onStatusToggle(m.id, m.status)}
+                        >
+                            <CheckCircle className={`h-5 w-5 ${isCompleted ? 'fill-emerald-500/20' : ''}`} />
+                        </div>
+                        <div className="space-y-1 w-full">
+                            <div className="flex items-center justify-between w-full">
+                                <h4 className={`font-semibold text-base ${isCompleted ? 'line-through text-muted-foreground' : 'text-foreground'}`}>{m.title}</h4>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <MoreVertical className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuItem onClick={() => onStatusToggle(m.id, m.status)}>
+                                            Mark as {isCompleted ? 'Pending' : 'Completed'}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => onEdit(m)}>
+                                            Edit Details
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem className="text-red-600 focus:text-white focus:bg-red-600" onClick={() => onDelete(m.id)}>
+                                            Delete
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+
+                            <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                                <div className="flex items-center gap-1">
+                                    <Calendar className="h-3 w-3" />
+                                    <span>{format(new Date(m.start_date), 'MMM d')} - {format(new Date(m.end_date), 'MMM d')}</span>
+                                </div>
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-secondary/50 border border-border/50">
+                                    {duration} days
+                                </span>
+                                {isPast && <Badge variant="destructive" className="h-5 text-[10px] px-1.5">Overdue</Badge>}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </motion.div>
+    )
+})
+MilestoneItem.displayName = 'MilestoneItem'
+
 export function ProjectTimeline({ project }: ProjectTimelineProps) {
     const supabase = createClient()
     const [milestones, setMilestones] = useState<any[]>([])
@@ -71,7 +164,7 @@ export function ProjectTimeline({ project }: ProjectTimelineProps) {
         end: ''
     })
 
-    const fetchMilestones = async () => {
+    const fetchMilestones = useCallback(async () => {
         const { data: m } = await supabase
             .from('project_milestones')
             .select('*')
@@ -80,7 +173,7 @@ export function ProjectTimeline({ project }: ProjectTimelineProps) {
 
         setMilestones(m || [])
         setLoading(false)
-    }
+    }, [project.id, supabase])
 
     useEffect(() => {
         fetchMilestones()
@@ -94,7 +187,7 @@ export function ProjectTimeline({ project }: ProjectTimelineProps) {
         return () => {
             supabase.removeChannel(channel)
         }
-    }, [project])
+    }, [project.id, fetchMilestones, supabase])
 
     // Handlers
     const openCreate = () => {
@@ -103,7 +196,7 @@ export function ProjectTimeline({ project }: ProjectTimelineProps) {
         setOpen(true)
     }
 
-    const openEdit = (m: any) => {
+    const openEdit = useCallback((m: any) => {
         setEditingId(m.id)
         setFormData({
             title: m.title,
@@ -111,7 +204,7 @@ export function ProjectTimeline({ project }: ProjectTimelineProps) {
             end: m.end_date
         })
         setOpen(true)
-    }
+    }, [])
 
     const handleSave = async () => {
         if (!formData.title || !formData.start || !formData.end) {
@@ -143,16 +236,16 @@ export function ProjectTimeline({ project }: ProjectTimelineProps) {
         }
     }
 
-    const handleDelete = (id: string) => {
+    const handleDelete = useCallback((id: string) => {
         setDeleteTargetId(id)
-    }
+    }, [])
 
-    const handleStatusToggle = async (id: string, currentStatus: string) => {
+    const handleStatusToggle = useCallback(async (id: string, currentStatus: string) => {
         const newStatus = currentStatus === 'completed' ? 'pending' : 'completed'
         // Optimistic Update
         setMilestones(prev => prev.map(m => m.id === id ? { ...m, status: newStatus } : m))
         await updateMilestoneStatus(id, newStatus)
-    }
+    }, [])
 
     // Bulk Actions
     const toggleSelectAll = () => {
@@ -163,11 +256,11 @@ export function ProjectTimeline({ project }: ProjectTimelineProps) {
         }
     }
 
-    const toggleSelect = (id: string) => {
+    const toggleSelect = useCallback((id: string) => {
         setSelectedIds(prev =>
             prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
         )
-    }
+    }, [])
 
     const handleBulkDelete = () => {
         setShowBulkDelete(true)
@@ -320,79 +413,20 @@ export function ProjectTimeline({ project }: ProjectTimelineProps) {
                 ) : (
                     <div className="relative space-y-0 pl-6 border-l border-zinc-800 ml-6 py-4">
                         {milestones.map((m, i) => {
-                            const isCompleted = m.status === 'completed'
-                            const isPast = new Date(m.end_date) < new Date() && !isCompleted
-                            const isNext = !isCompleted && !isPast && (i === 0 || milestones[i - 1]?.status === 'completed')
-
-                            const duration = differenceInDays(new Date(m.end_date), new Date(m.start_date)) + 1
+                            const isNext = m.status !== 'completed' && (i === 0 || milestones[i - 1]?.status === 'completed') && (new Date(m.end_date) >= new Date() || true)
 
                             return (
-                                <motion.div
+                                <MilestoneItem
                                     key={m.id}
-                                    initial={{ opacity: 0, x: -10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    transition={{ delay: i * 0.05 }}
-                                    className="relative pl-8 pb-8 last:pb-2 group"
-                                >
-                                    {/* Timeline Connector */}
-                                    {/* Adjusted top position to align with checkbox/row */}
-                                    <div className={`absolute -left-[29px] top-6 h-4 w-4 rounded-full border-4 ${isCompleted ? 'bg-blue-500 border-zinc-950' : isNext ? 'bg-yellow-400 animate-pulse border-zinc-950' : 'bg-zinc-800 border-zinc-950 ring-1 ring-zinc-800'}`} />
-
-                                    <div className={`flex items-start gap-3 p-4 rounded-xl border transition-all duration-200 ${isCompleted ? 'bg-zinc-900/30 border-zinc-800' : isNext ? 'bg-blue-500/5 border-blue-500/20' : 'bg-card border-zinc-800 hover:border-zinc-700'}`}>
-                                        {/* Row Checkbox */}
-                                        <div className="mt-1">
-                                            <Checkbox
-                                                checked={selectedIds.includes(m.id)}
-                                                onCheckedChange={() => toggleSelect(m.id)}
-                                            />
-                                        </div>
-
-                                        <div className="flex-1 flex items-start justify-between gap-4">
-                                            <div className="flex items-start gap-4 flex-1">
-                                                <div
-                                                    className={`mt-1 cursor-pointer transition-colors p-1 rounded-full hover:bg-zinc-800 ${isCompleted ? 'text-emerald-500' : 'text-zinc-500'}`}
-                                                    onClick={() => handleStatusToggle(m.id, m.status)}
-                                                >
-                                                    <CheckCircle className={`h-5 w-5 ${isCompleted ? 'fill-emerald-500/20' : ''}`} />
-                                                </div>
-                                                <div className="space-y-1 w-full">
-                                                    <div className="flex items-center justify-between w-full">
-                                                        <h4 className={`font-semibold text-base ${isCompleted ? 'line-through text-muted-foreground' : 'text-foreground'}`}>{m.title}</h4>
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
-                                                                <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                    <MoreVertical className="h-4 w-4" />
-                                                                </Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end">
-                                                                <DropdownMenuItem onClick={() => handleStatusToggle(m.id, m.status)}>
-                                                                    Mark as {isCompleted ? 'Pending' : 'Completed'}
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem onClick={() => openEdit(m)}>
-                                                                    Edit Details
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem className="text-red-600 focus:text-white focus:bg-red-600" onClick={() => handleDelete(m.id)}>
-                                                                    Delete
-                                                                </DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                    </div>
-
-                                                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                                                        <div className="flex items-center gap-1">
-                                                            <Calendar className="h-3 w-3" />
-                                                            <span>{format(new Date(m.start_date), 'MMM d')} - {format(new Date(m.end_date), 'MMM d')}</span>
-                                                        </div>
-                                                        <span className="text-xs px-2 py-0.5 rounded-full bg-secondary/50 border border-border/50">
-                                                            {duration} days
-                                                        </span>
-                                                        {isPast && <Badge variant="destructive" className="h-5 text-[10px] px-1.5">Overdue</Badge>}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </motion.div>
+                                    m={m}
+                                    i={i}
+                                    isNext={!!isNext}
+                                    isSelected={selectedIds.includes(m.id)}
+                                    onToggleSelect={toggleSelect}
+                                    onStatusToggle={handleStatusToggle}
+                                    onEdit={openEdit}
+                                    onDelete={handleDelete}
+                                />
                             )
                         })}
                     </div>

@@ -289,26 +289,28 @@ export function ProjectDetailsClient({ project, documents, latestDocs, userId, i
                                                     </Button>
                                                 </div>
                                             ) : (
-                                                <div className="space-y-4">
-                                                    {latestDocs.map((doc) => (
-                                                        <div key={doc.id} className="flex items-start">
-                                                            <FileText className="mr-2 h-4 w-4 text-blue-500 mt-1 uppercase" />
-                                                            <div className="ml-2 space-y-1 w-full min-w-0">
-                                                                <p className="text-sm font-medium leading-none truncate">{doc.title}</p>
-                                                                <p className="text-xs text-muted-foreground capitalize">{doc.type}</p>
+                                                <div className="flex-1 flex flex-col justify-between">
+                                                    <div className="space-y-4">
+                                                        {latestDocs.map((doc) => (
+                                                            <div key={doc.id} className="flex items-start">
+                                                                <FileText className="mr-2 h-4 w-4 text-blue-500 mt-1 uppercase" />
+                                                                <div className="ml-2 space-y-1 w-full min-w-0">
+                                                                    <p className="text-sm font-medium leading-none truncate">{doc.title}</p>
+                                                                    <p className="text-xs text-muted-foreground capitalize">{doc.type}</p>
+                                                                </div>
+                                                                <div className="ml-auto font-medium text-xs text-muted-foreground whitespace-nowrap pl-2">
+                                                                    {formatDistanceToNow(new Date(doc.created_at))} ago
+                                                                </div>
                                                             </div>
-                                                            <div className="ml-auto font-medium text-xs text-muted-foreground whitespace-nowrap pl-2">
-                                                                {formatDistanceToNow(new Date(doc.created_at))} ago
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                    <div className="pt-2">
+                                                        ))}
+                                                    </div>
+                                                    <div className="pt-4 mt-auto text-right border-t border-white/5">
                                                         <Button
                                                             variant="link"
-                                                            className="text-sm text-blue-500 hover:underline p-0 h-auto"
+                                                            className="text-sm text-blue-500 hover:text-blue-400 p-0 h-auto"
                                                             onClick={() => setActiveTab('documents')}
                                                         >
-                                                            View all
+                                                            View all &rarr;
                                                         </Button>
                                                     </div>
                                                 </div>

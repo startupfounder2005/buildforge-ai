@@ -112,6 +112,20 @@ export function ImportDocumentGlobalDialog({ projects, userId, onSuccess }: Impo
 
             if (dbError) throw dbError
 
+            // Trigger Notification
+            const { error: notifError } = await supabase
+                .from('notifications')
+                .insert({
+                    user_id: userId,
+                    type: 'document',
+                    title: 'Document Imported',
+                    message: `Imported "${title}" to project.`,
+                    link: `/dashboard/documents`,
+                    is_read: false
+                })
+
+            if (notifError) console.error("Import Notification Error", notifError)
+
             toast.success("Document imported successfully!")
             setOpen(false)
             setFile(null)
@@ -304,7 +318,7 @@ export function ImportDocumentGlobalDialog({ projects, userId, onSuccess }: Impo
                         </div>
 
                         <div className="flex justify-end gap-2 mt-2">
-                            <Button variant="ghost" onClick={() => setOpen(false)} className="hover:bg-zinc-800 text-zinc-400">Cancel</Button>
+                            <Button variant="ghost" onClick={() => setOpen(false)} className="text-zinc-400 hover:bg-[#451573] hover:text-white">Cancel</Button>
                             <Button
                                 onClick={handleSubmit}
                                 disabled={loading || !file}

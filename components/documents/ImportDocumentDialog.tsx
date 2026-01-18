@@ -291,7 +291,7 @@ export function ImportDocumentDialog({ projectId, userId, onSuccess }: ImportDoc
                 </div>
 
                 <div className="flex justify-end gap-2 mt-2">
-                    <Button variant="ghost" onClick={() => setOpen(false)} className="hover:bg-zinc-800 text-zinc-400">Cancel</Button>
+                    <Button variant="ghost" onClick={() => setOpen(false)} className="text-zinc-400 hover:bg-[#451573] hover:text-white">Cancel</Button>
                     <Button
                         onClick={handleSubmit}
                         disabled={loading || !file}

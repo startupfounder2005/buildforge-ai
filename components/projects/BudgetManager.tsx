@@ -395,14 +395,16 @@ export function BudgetManager({ projectId, initialBudget, initialExpenses }: Bud
                     <AlertDialog open={bulkDeleteConfirmOpen} onOpenChange={setBulkDeleteConfirmOpen}>
                         <AlertDialogContent>
                             <AlertDialogHeader>
-                                <AlertDialogTitle>Delete {selectedExpenses.size} Expenses?</AlertDialogTitle>
+                                <AlertDialogTitle>Delete {selectedExpenses.size} {selectedExpenses.size === 1 ? 'Expense' : 'Expenses'}?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    This action cannot be undone. These expenses will be permanently removed.
+                                    This action cannot be undone. {selectedExpenses.size === 1 ? 'This expense' : 'These expenses'} will be permanently removed.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={executeBulkDelete} className="bg-red-600 hover:bg-red-700">Delete All</AlertDialogAction>
+                                <AlertDialogAction onClick={executeBulkDelete} className="bg-red-600 hover:bg-red-700">
+                                    {selectedExpenses.size === 1 ? 'Delete' : 'Delete All'}
+                                </AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>

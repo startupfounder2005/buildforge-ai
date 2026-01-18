@@ -469,15 +469,15 @@ export function DocumentTable({ documents }: DocumentTableProps) {
             <AlertDialog open={confirmBulkDelete} onOpenChange={setConfirmBulkDelete}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Delete {selectedDocIds.length} Documents?</AlertDialogTitle>
+                        <AlertDialogTitle>Delete {selectedDocIds.length} {selectedDocIds.length === 1 ? 'Document' : 'Documents'}?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This action cannot be undone. These documents will be permanently removed.
+                            This action cannot be undone. {selectedDocIds.length === 1 ? 'This document' : 'These documents'} will be permanently removed.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={executeBulkDelete} className="bg-red-600 hover:bg-red-700">
-                            {isBulkDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Delete All'}
+                            {isBulkDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : (selectedDocIds.length === 1 ? 'Delete' : 'Delete All')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

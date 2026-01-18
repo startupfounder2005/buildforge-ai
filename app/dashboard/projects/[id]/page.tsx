@@ -25,7 +25,7 @@ export default async function ProjectPage({ params, searchParams }: { params: Pr
         .eq('project_id', id)
         .order('created_at', { ascending: false })
 
-    const latestDocs = documents?.slice(0, 3) || []
+    const latestDocs = documents?.slice(0, 7) || []
 
     return (
         <ProjectDetailsClient
