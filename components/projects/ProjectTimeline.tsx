@@ -373,15 +373,30 @@ export function ProjectTimeline({ project }: ProjectTimelineProps) {
                         >
                             <span className="text-sm font-medium text-blue-400">{selectedIds.length} selected</span>
                             <div className="flex items-center gap-2">
-                                <Button size="sm" variant="ghost" className="h-8 hover:bg-blue-500/20 hover:text-blue-400 border border-transparent hover:border-white transition-all" onClick={() => handleBulkStatus('completed')}>
-                                    <CheckCircle2 className="h-3 w-3 mr-1.5" /> Mark Complete
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-8 text-xs text-zinc-300 hover:bg-blue-500/10 hover:text-blue-400 border border-transparent hover:border-blue-500/20 transition-all font-medium gap-1.5"
+                                    onClick={() => handleBulkStatus('completed')}
+                                >
+                                    <CheckCircle2 className="h-3.5 w-3.5" /> Mark Complete
                                 </Button>
-                                <Button size="sm" variant="ghost" className="h-8 hover:bg-blue-500/20 hover:text-blue-400 border border-transparent hover:border-white transition-all" onClick={() => handleBulkStatus('pending')}>
-                                    <Clock className="h-3 w-3 mr-1.5" /> Mark Pending
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-8 text-xs text-zinc-300 hover:bg-blue-500/10 hover:text-blue-400 border border-transparent hover:border-blue-500/20 transition-all font-medium gap-1.5"
+                                    onClick={() => handleBulkStatus('pending')}
+                                >
+                                    <Clock className="h-3.5 w-3.5" /> Mark Pending
                                 </Button>
-                                <div className="h-4 w-px bg-blue-500/20 mx-1 self-center" />
-                                <Button size="sm" variant="ghost" className="h-8 text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-transparent hover:border-white transition-all" onClick={handleBulkDelete}>
-                                    <Trash2 className="h-3 w-3 mr-1.5" /> Delete
+                                <div className="h-4 w-px bg-zinc-700 mx-1 self-center" />
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-8 text-xs text-zinc-300 hover:bg-red-500/10 hover:text-red-400 border border-transparent hover:border-red-500/20 transition-all font-medium gap-1.5"
+                                    onClick={handleBulkDelete}
+                                >
+                                    <Trash2 className="h-3.5 w-3.5" /> Delete
                                 </Button>
                             </div>
                         </motion.div>

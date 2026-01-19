@@ -300,7 +300,7 @@ export function BudgetManager({ projectId, initialBudget, initialExpenses }: Bud
                         variant="outline"
                         onClick={handleOpenBudget}
                         disabled={isLoadingBudgetTrigger}
-                        className="h-9 px-3 text-xs font-medium border-zinc-700 bg-zinc-900/50 hover:bg-[#7C3AED] hover:text-white transition-colors"
+                        className="h-9 px-3 text-xs font-medium border-zinc-700 bg-zinc-900/50 hover:bg-[#4C1D95] hover:text-white transition-colors"
                     >
                         {isLoadingBudgetTrigger ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Set Budget"}
                     </Button>

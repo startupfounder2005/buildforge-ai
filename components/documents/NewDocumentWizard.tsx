@@ -411,7 +411,11 @@ export function NewDocumentWizard({ projectId, onSuccess, onCancel }: NewDocumen
                                         <div className="grid grid-cols-2 gap-4">
                                             <div className="space-y-2">
                                                 <Label>Time</Label>
-                                                <Input type="time" {...register('incidentTime')} />
+                                                <Input
+                                                    type="time"
+                                                    {...register('incidentTime')}
+                                                    onClick={(e) => (e.target as HTMLInputElement).showPicker?.()}
+                                                />
                                                 {errors.incidentTime && <p className="text-sm text-destructive">Required</p>}
                                             </div>
                                             <div className="space-y-2">
@@ -575,7 +579,7 @@ export function NewDocumentWizard({ projectId, onSuccess, onCancel }: NewDocumen
                     </AnimatePresence>
                 </CardContent>
                 <CardFooter className="flex justify-between border-t p-6 bg-muted/10">
-                    <Button variant="ghost" onClick={handleBack} disabled={loading}>
+                    <Button variant="ghost" className="border border-transparent hover:border-white transition-all" onClick={handleBack} disabled={loading}>
                         <ChevronLeft className="mr-2 h-4 w-4" /> Back
                     </Button>
 

@@ -88,7 +88,14 @@ export function DocumentsClient({ initialDocuments, projects, userId, plan }: Do
             doc.projects?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             doc.description?.toLowerCase().includes(searchQuery.toLowerCase())
 
-        const matchesType = typeFilter === 'all' || doc.type === typeFilter
+        const matchesType = typeFilter === 'all' ||
+            (typeFilter === 'permit' && ['building_permit', 'electrical_permit', 'plumbing_permit', 'mechanical_permit'].includes(doc.type)) ||
+            (typeFilter === 'contract' && doc.type === 'subcontractor_agreement') ||
+            (typeFilter === 'safety_report' && doc.type === 'safety_report') ||
+            (typeFilter === 'project_bid' && doc.type === 'project_bid') ||
+            (typeFilter === 'invoice' && doc.type === 'invoice') ||
+            (typeFilter === 'change_order' && doc.type === 'change_order') ||
+            (typeFilter === 'daily_log' && doc.type === 'daily_log')
 
         return matchesSearch && matchesType
     }).sort((a, b) => {
@@ -100,6 +107,17 @@ export function DocumentsClient({ initialDocuments, projects, userId, plan }: Do
             default: return 0
         }
     })
+
+    const getStatusConfig = (status: string) => {
+        switch (status?.toLowerCase()) {
+            case 'imported':
+                return { label: 'Imported', className: 'bg-amber-500/10 text-amber-500 border-amber-500/20' }
+            case 'reported':
+            case 'draft':
+            default:
+                return { label: 'AI Generated', className: 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20' }
+        }
+    }
 
     // Actions
     const handleSelectAll = (checked: boolean) => {
@@ -365,6 +383,8 @@ export function DocumentsClient({ initialDocuments, projects, userId, plan }: Do
                             <SelectItem value="all" className="cursor-pointer border border-transparent hover:border-white transition-all">All Types</SelectItem>
                             <SelectItem value="permit" className="cursor-pointer border border-transparent hover:border-white transition-all">Permit</SelectItem>
                             <SelectItem value="contract" className="cursor-pointer border border-transparent hover:border-white transition-all">Contract</SelectItem>
+                            <SelectItem value="safety_report" className="cursor-pointer border border-transparent hover:border-white transition-all">Safety Report</SelectItem>
+                            <SelectItem value="project_bid" className="cursor-pointer border border-transparent hover:border-white transition-all">Project Bid</SelectItem>
                             <SelectItem value="invoice" className="cursor-pointer border border-transparent hover:border-white transition-all">Invoice</SelectItem>
                             <SelectItem value="change_order" className="cursor-pointer border border-transparent hover:border-white transition-all">Change Order</SelectItem>
                             <SelectItem value="daily_log" className="cursor-pointer border border-transparent hover:border-white transition-all">Daily Log</SelectItem>
@@ -428,7 +448,7 @@ export function DocumentsClient({ initialDocuments, projects, userId, plan }: Do
                     {docsLimitReached ? (
                         <Button
                             variant="outline"
-                            className="gap-2 border-dashed border-zinc-700 hover:bg-zinc-900 hover:text-blue-500 hover:border-blue-500/50"
+                            className="gap-2 border-dashed border-zinc-700 hover:bg-zinc-900 hover:text-blue-500 hover:border-white transition-all"
                             onClick={() => setUpgradeOpen(true)}
                         >
                             <Plus className="h-4 w-4" /> Generate New
@@ -458,12 +478,12 @@ export function DocumentsClient({ initialDocuments, projects, userId, plan }: Do
                             {selectedDocIds.length} selected
                         </span>
                         <div className="flex items-center gap-2">
-                            <Button size="sm" variant="ghost" className="hover:bg-blue-500/20 hover:text-blue-400 h-8 gap-2 border border-transparent hover:border-white" onClick={handleBulkDownload} disabled={loading}>
-                                {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+                            <Button size="sm" variant="ghost" className="h-8 text-xs text-zinc-300 hover:bg-blue-500/10 hover:text-blue-400 border border-transparent hover:border-blue-500/20 transition-all font-medium gap-2" onClick={handleBulkDownload} disabled={loading}>
+                                {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
                                 Export Zip
                             </Button>
-                            <Button size="sm" variant="ghost" className="hover:bg-red-500/20 hover:text-red-400 h-8 gap-2 border border-transparent hover:border-white" onClick={() => setConfirmBulkDelete(true)}>
-                                <Trash2 className="h-3 w-3" />
+                            <Button size="sm" variant="ghost" className="h-8 text-xs text-zinc-300 hover:bg-red-500/10 hover:text-red-400 border border-transparent hover:border-red-500/20 transition-all font-medium gap-2" onClick={() => setConfirmBulkDelete(true)}>
+                                <Trash2 className="h-3.5 w-3.5" />
                                 Delete
                             </Button>
                         </div>
@@ -538,9 +558,14 @@ export function DocumentsClient({ initialDocuments, projects, userId, plan }: Do
                                             {doc.type.replace(/_/g, ' ')}
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant={doc.status === 'Imported' ? 'destructive' : 'default'} className={doc.status === 'Imported' ? "bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20" : ""}>
-                                                {doc.status || 'Draft'}
-                                            </Badge>
+                                            {(() => {
+                                                const config = getStatusConfig(doc.status)
+                                                return (
+                                                    <Badge variant="outline" className={`font-medium border ${config.className}`}>
+                                                        {config.label}
+                                                    </Badge>
+                                                )
+                                            })()}
                                         </TableCell>
                                         <TableCell className="text-zinc-500 text-sm">
                                             {format(new Date(doc.created_at), 'MMM d, yyyy')}
@@ -577,9 +602,17 @@ export function DocumentsClient({ initialDocuments, projects, userId, plan }: Do
                                         <FileText className="h-6 w-6 text-zinc-500 group-hover:text-blue-500" />
                                     </div>
                                     <div className="flex flex-col items-end gap-1">
-                                        <Badge variant="secondary" className="bg-zinc-900 text-xs">
+                                        <Badge variant="secondary" className="bg-zinc-900 border-zinc-800 text-zinc-400 text-[10px] uppercase tracking-wider font-bold">
                                             {doc.type.replace(/_/g, ' ')}
                                         </Badge>
+                                        {(() => {
+                                            const config = getStatusConfig(doc.status)
+                                            return (
+                                                <Badge variant="outline" className={`text-[9px] py-0 px-1 border ${config.className}`}>
+                                                    {config.label}
+                                                </Badge>
+                                            )
+                                        })()}
                                     </div>
                                 </div>
 

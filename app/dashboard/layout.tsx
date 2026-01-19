@@ -79,7 +79,7 @@ export default async function DashboardLayout({
 
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="relative h-8 w-8 rounded-full transition-all hover:ring-2 hover:ring-primary hover:ring-offset-2 hover:scale-105">
+                                <Button variant="ghost" className="relative h-8 w-8 rounded-full transition-all hover:ring-1 hover:ring-primary hover:ring-offset-1 hover:scale-105">
                                     <Avatar className="h-8 w-8">
                                         <AvatarImage src={profile?.avatar_url || ''} alt="@user" className="object-cover" />
                                         <AvatarFallback className="bg-primary text-primary-foreground">

@@ -100,7 +100,7 @@ export function GenerateDocumentGlobalDialog({ projects, userId, customTrigger, 
                     variant="outline"
                     onClick={handleOpen}
                     disabled={isLoadingTrigger}
-                    className="gap-2 border-dashed border-zinc-700 hover:bg-zinc-900 hover:text-blue-500 border border-transparent hover:border-white transition-all"
+                    className="gap-2 border-dashed border-zinc-700 hover:bg-zinc-900 hover:text-blue-500 hover:border-white transition-all"
                 >
                     {isLoadingTrigger ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
                     Generate New

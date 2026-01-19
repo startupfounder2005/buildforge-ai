@@ -111,7 +111,7 @@ export function BillingTab({ plan = 'free' }: { plan?: string }) {
                     </CardContent>
                     <CardFooter>
                         <Button
-                            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border-0 shadow-lg shadow-indigo-500/20"
+                            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border border-transparent hover:border-white transition-all shadow-lg shadow-indigo-500/20"
                             onClick={isPro ? handleManage : handleUpgrade}
                             disabled={isLoading}
                         >

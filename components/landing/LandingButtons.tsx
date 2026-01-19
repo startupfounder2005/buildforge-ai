@@ -24,7 +24,7 @@ export function LandingButtons() {
             <Button
                 variant="outline"
                 size="lg"
-                className="h-12 px-8 text-base border-white/20 hover:bg-accent hover:border-accent hover:text-white transition-all backdrop-blur-sm min-w-[120px]"
+                className="h-12 px-8 text-base border-white/20 hover:bg-[#4C1D95] hover:border-white hover:text-white transition-all backdrop-blur-sm min-w-[120px]"
                 onClick={handleLoginClick}
                 disabled={isLoading}
             >

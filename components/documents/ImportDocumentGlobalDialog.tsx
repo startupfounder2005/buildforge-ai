@@ -331,7 +331,7 @@ export function ImportDocumentGlobalDialog({ projects, userId, onSuccess }: Impo
                             </div>
 
                             <div className="flex justify-end gap-2 mt-2">
-                                <Button variant="ghost" onClick={() => setOpen(false)} className="text-zinc-400 hover:bg-[#451573] hover:text-white">Cancel</Button>
+                                <Button variant="ghost" onClick={() => setOpen(false)} className="text-zinc-400 border border-transparent hover:border-white hover:bg-zinc-800 hover:text-white transition-all">Cancel</Button>
                                 <Button
                                     onClick={handleSubmit}
                                     disabled={loading || !file}

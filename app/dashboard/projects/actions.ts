@@ -238,6 +238,28 @@ export async function deleteProject(id: string) {
     return { message: 'Success' }
 }
 
+export async function deleteProjects(ids: string[]) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+        return { message: 'Unauthorized' }
+    }
+
+    const { error } = await supabase
+        .from('projects')
+        .delete()
+        .in('id', ids)
+        .eq('user_id', user.id)
+
+    if (error) {
+        return { message: 'Database Error: Failed to Delete Projects.' }
+    }
+
+    revalidatePath('/dashboard/projects')
+    return { message: 'Success' }
+}
+
 export async function deleteDocument(id: string) {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()

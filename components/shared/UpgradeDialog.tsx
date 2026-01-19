@@ -55,7 +55,7 @@ export function UpgradeDialog({ open, onOpenChange, limitType }: UpgradeDialogPr
                 </div>
 
                 <DialogFooter>
-                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button variant="ghost" className="border border-transparent hover:border-white transition-all" onClick={() => onOpenChange(false)}>Cancel</Button>
                     <Button
                         className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white shadow-md shadow-purple-500/20"
                         onClick={() => router.push('/dashboard/account?tab=billing')}

@@ -4,7 +4,8 @@ import { useEffect, useState, useMemo } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { toast } from 'sonner'
-import { Save, Loader2, Plus, StickyNote, MoreVertical, Pencil, Trash2 } from 'lucide-react'
+import { Save, Loader2, Plus, StickyNote, MoreVertical, Pencil, Trash2, FileText } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
 import dynamic from 'next/dynamic'
 import 'react-quill-new/dist/quill.snow.css'
 import {
@@ -326,238 +327,266 @@ export function ProjectNotes({ projectId }: ProjectNotesProps) {
                     <h3 className="font-semibold text-lg">Project Notes</h3>
                     <p className="text-sm text-muted-foreground">Keep track of important details and updates.</p>
                 </div>
-                <div className="flex items-center gap-2">
-                    {selectedIds.size > 0 && (
-                        <>
-                            <Button variant="outline" onClick={handleBulkExport} disabled={isExporting} className="border border-transparent hover:border-white transition-all">
-                                {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="mr-2 h-4 w-4" /> Export ({selectedIds.size})</>}
-                            </Button>
-                            <Button variant="destructive" onClick={handleBulkDelete} className="border border-transparent hover:border-white transition-all">
-                                <Trash2 className="mr-2 h-4 w-4" /> Delete ({selectedIds.size})
-                            </Button>
-                        </>
-                    )}
-                    <Button onClick={() => setOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white gap-2 shadow-lg shadow-blue-900/20 border border-transparent hover:border-white transition-all">
-                        <Plus className="h-4 w-4" /> Add Note
-                    </Button>
-                </div>
-
-                <Dialog open={open} onOpenChange={handleDialogOpenChange}>
-                    {/* ... (existing dialog content untouched) ... */}
-                    <DialogContent className={`flex flex-col transition-all duration-300 ${activeTab === 'write' ? 'max-w-3xl h-[85vh]' : 'max-w-lg h-auto'}`}>
-                        <DialogHeader>
-                            <DialogTitle>{editingNote ? 'Edit Note' : 'Add New Note'}</DialogTitle>
-                            <DialogDescription>
-                                {editingNote ? 'Update your note below.' : 'Choose how you want to add your note.'}
-                            </DialogDescription>
-                        </DialogHeader>
-
-                        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-                            {!editingNote && (
-                                <TabsList className="grid w-full grid-cols-3 mb-4">
-                                    <TabsTrigger value="write">Write Note</TabsTrigger>
-                                    <TabsTrigger value="text">Import Text/Doc</TabsTrigger>
-                                    <TabsTrigger value="image">Import Image</TabsTrigger>
-                                </TabsList>
-                            )}
-
-                            {/* WRITE TAB */}
-                            <TabsContent value="write" className="flex-1 flex flex-col overflow-hidden m-0">
-                                <div className="flex-1 overflow-hidden border rounded-md relative">
-                                    <ReactQuill
-                                        theme="snow"
-                                        value={content}
-                                        onChange={setContent}
-                                        className="h-full pb-12"
-                                        modules={modules}
-                                    />
-                                </div>
-                                <div className="flex justify-end text-xs text-muted-foreground mt-1">
-                                    {stripHtml(content).length} / 2500 characters
-                                </div>
-                                <DialogFooter className="mt-4">
-                                    <Button variant="outline" onClick={() => handleDialogOpenChange(false)}>Cancel</Button>
-                                    <Button onClick={handleSave} disabled={saving || stripHtml(content).length > 2500} className="border border-transparent hover:border-white transition-all">
-                                        {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                        {editingNote ? 'Update Note' : 'Save Note'}
-                                    </Button>
-                                </DialogFooter>
-                            </TabsContent>
-
-                            {/* IMPORT TEXT TAB */}
-                            <TabsContent value="text" className="flex flex-col m-0 space-y-4">
-                                <div className="border-2 border-dashed border-zinc-700 rounded-lg h-48 flex flex-col items-center justify-center text-center space-y-3 bg-zinc-900/30 hover:bg-zinc-900/50 transition-colors group cursor-pointer relative">
-                                    <input
-                                        type="file"
-                                        accept=".txt,.md"
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50"
-                                        onChange={(e) => {
-                                            const file = e.target.files?.[0]
-                                            if (file) {
-                                                const reader = new FileReader()
-                                                reader.onload = (e) => {
-                                                    const text = e.target?.result as string
-                                                    setTempTextPreview(text)
-                                                }
-                                                reader.readAsText(file)
-                                            }
-                                        }}
-                                    />
-                                    <div className="bg-zinc-800 p-3 rounded-full group-hover:bg-zinc-700 transition-colors">
-                                        <StickyNote className="h-6 w-6 text-zinc-400 group-hover:text-zinc-200" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="font-medium text-sm text-zinc-200">Click to upload text file</p>
-                                        <p className="text-xs text-muted-foreground">Support for .txt, .md</p>
-                                    </div>
-                                </div>
-                                {tempTextPreview && (
-                                    <div className="h-64 border rounded-md p-4 overflow-y-auto bg-muted/10 font-mono text-xs whitespace-pre-wrap">
-                                        {tempTextPreview}
-                                    </div>
-                                )}
-                                <DialogFooter>
-                                    <Button
-                                        onClick={async () => {
-                                            if (tempTextPreview) {
-                                                setSaving(true)
-                                                try {
-                                                    const user = (await supabase.auth.getUser()).data.user
-                                                    if (!user) return
-
-                                                    const { data, error } = await supabase
-                                                        .from('project_notes')
-                                                        .insert({
-                                                            content: tempTextPreview.replace(/\n/g, '<br/>'),
-                                                            project_id: projectId,
-                                                            user_id: user.id,
-                                                            type: 'text'
-                                                        })
-                                                        .select()
-                                                        .single()
-
-                                                    if (error) throw error
-
-                                                    setNotes(prev => [data, ...prev])
-                                                    toast.success("Note imported successfully")
-                                                    handleDialogOpenChange(false)
-                                                } catch (err) {
-                                                    toast.error("Failed to save note")
-                                                } finally {
-                                                    setSaving(false)
-                                                }
-                                            }
-                                        }}
-                                        disabled={!tempTextPreview || saving}
-                                    >
-                                        {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Save as Note'}
-                                    </Button>
-                                </DialogFooter>
-                            </TabsContent>
-
-                            {/* IMPORT IMAGE TAB */}
-                            <TabsContent value="image" className="flex flex-col m-0 space-y-4">
-                                <div className="border-2 border-dashed border-zinc-700 rounded-lg h-48 flex flex-col items-center justify-center text-center space-y-3 bg-zinc-900/30 hover:bg-zinc-900/50 transition-colors group cursor-pointer relative">
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50"
-                                        onChange={(e) => {
-                                            const file = e.target.files?.[0]
-                                            if (file) {
-                                                const url = URL.createObjectURL(file)
-                                                setTempImagePreview(url)
-                                                setTempImageFile(file)
-                                            }
-                                        }}
-                                    />
-                                    <div className="bg-zinc-800 p-3 rounded-full group-hover:bg-zinc-700 transition-colors">
-                                        <StickyNote className="h-6 w-6 text-zinc-400 group-hover:text-zinc-200" />
-                                    </div>
-                                    <div className="space-y-1">
-                                        <p className="font-medium text-sm text-zinc-200">Click to upload image</p>
-                                        <p className="text-xs text-muted-foreground">Support for .png, .jpg, .webp</p>
-                                    </div>
-                                </div>
-                                {tempImagePreview && (
-                                    <div className="h-64 border rounded-md p-4 flex items-center justify-center bg-zinc-950 overflow-hidden">
-                                        <img src={tempImagePreview} className="max-h-full max-w-full object-contain shadow-lg rounded-sm" />
-                                    </div>
-                                )}
-                                <DialogFooter>
-                                    <Button
-                                        onClick={async () => {
-                                            if (tempImageFile) {
-                                                setSaving(true)
-                                                try {
-                                                    const fileName = `${Date.now()}-${tempImageFile.name.replace(/[^a-zA-Z0-9.-]/g, '')}`
-                                                    const { data: uploadData, error: uploadError } = await supabase.storage
-                                                        .from('project-assets')
-                                                        .upload(fileName, tempImageFile)
-
-                                                    if (uploadError) throw uploadError
-
-                                                    const { data: { publicUrl } } = supabase.storage
-                                                        .from('project-assets')
-                                                        .getPublicUrl(fileName)
-
-                                                    const user = (await supabase.auth.getUser()).data.user
-                                                    if (!user) return
-
-                                                    const { data, error } = await supabase
-                                                        .from('project_notes')
-                                                        .insert({
-                                                            content: tempImageFile.name,
-                                                            project_id: projectId,
-                                                            user_id: user.id,
-                                                            type: 'image',
-                                                            media_url: publicUrl
-                                                        })
-                                                        .select()
-                                                        .single()
-
-                                                    if (error) throw error
-
-                                                    setNotes(prev => [data, ...prev])
-                                                    toast.success("Image note added")
-                                                    handleDialogOpenChange(false)
-                                                } catch (err: any) {
-                                                    toast.error("Failed to add image note. Ensure 'project-assets' bucket exists.")
-                                                    console.error(err)
-                                                } finally {
-                                                    setSaving(false)
-                                                }
-                                            }
-                                        }}
-                                        disabled={!tempImageFile || saving}
-                                    >
-                                        {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Add to Notes'}
-                                    </Button>
-                                </DialogFooter>
-                            </TabsContent>
-                        </Tabs>
-                    </DialogContent>
-                </Dialog>
+                <Button onClick={() => setOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white gap-2 shadow-lg shadow-blue-900/20 border border-transparent hover:border-white transition-all">
+                    <Plus className="h-4 w-4" /> Add Note
+                </Button>
             </div>
 
-            {notes.length > 0 && (
-                <div className="flex items-center gap-2 px-1">
-                    <div className="flex items-center space-x-2">
-                        <Checkbox
-                            id="select-all"
-                            checked={selectedIds.size === notes.length && notes.length > 0}
-                            onCheckedChange={toggleSelectAll}
-                        />
-                        <label
-                            htmlFor="select-all"
-                            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                        >
-                            Select All
-                        </label>
+            <AnimatePresence>
+                {selectedIds.size > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10, height: 0 }}
+                        animate={{ opacity: 1, y: 0, height: 'auto' }}
+                        exit={{ opacity: 0, y: -10, height: 0 }}
+                        className="overflow-hidden"
+                    >
+                        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2 px-4 flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium text-blue-400">
+                                {selectedIds.size} {selectedIds.size === 1 ? 'note' : 'notes'} selected
+                            </span>
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={handleBulkExport}
+                                    disabled={isExporting}
+                                    className="h-8 text-xs text-zinc-300 hover:bg-blue-500/10 hover:text-blue-400 border border-transparent hover:border-blue-500/20 transition-all font-medium gap-1.5"
+                                >
+                                    {isExporting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                                    Export Selected
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={handleBulkDelete}
+                                    className="h-8 text-xs text-zinc-300 hover:bg-red-500/10 hover:text-red-400 border border-transparent hover:border-red-500/20 transition-all font-medium gap-1.5"
+                                >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                    Delete Selected
+                                </Button>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+
+            <Dialog open={open} onOpenChange={handleDialogOpenChange}>
+                {/* ... (existing dialog content untouched) ... */}
+                <DialogContent className={`flex flex-col transition-all duration-300 ${activeTab === 'write' ? 'max-w-3xl h-[85vh]' : 'max-w-lg h-auto'}`}>
+                    <DialogHeader>
+                        <DialogTitle>{editingNote ? 'Edit Note' : 'Add New Note'}</DialogTitle>
+                        <DialogDescription>
+                            {editingNote ? 'Update your note below.' : 'Choose how you want to add your note.'}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
+                        {!editingNote && (
+                            <TabsList className="grid w-full grid-cols-3 mb-4">
+                                <TabsTrigger value="write">Write Note</TabsTrigger>
+                                <TabsTrigger value="text">Import Text/Doc</TabsTrigger>
+                                <TabsTrigger value="image">Import Image</TabsTrigger>
+                            </TabsList>
+                        )}
+
+                        {/* WRITE TAB */}
+                        <TabsContent value="write" className="flex-1 flex flex-col overflow-hidden m-0">
+                            <div className="flex-1 overflow-hidden border rounded-md relative">
+                                <ReactQuill
+                                    theme="snow"
+                                    value={content}
+                                    onChange={setContent}
+                                    className="h-full pb-12"
+                                    modules={modules}
+                                />
+                            </div>
+                            <div className="flex justify-end text-xs text-muted-foreground mt-1">
+                                {stripHtml(content).length} / 2500 characters
+                            </div>
+                            <DialogFooter className="mt-4">
+                                <Button variant="outline" onClick={() => handleDialogOpenChange(false)}>Cancel</Button>
+                                <Button onClick={handleSave} disabled={saving || stripHtml(content).length > 2500} className="border border-transparent hover:border-white transition-all">
+                                    {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    {editingNote ? 'Update Note' : 'Save Note'}
+                                </Button>
+                            </DialogFooter>
+                        </TabsContent>
+
+                        {/* IMPORT TEXT TAB */}
+                        <TabsContent value="text" className="flex flex-col m-0 space-y-4">
+                            <div className="border-2 border-dashed border-zinc-700 rounded-lg h-48 flex flex-col items-center justify-center text-center space-y-3 bg-zinc-900/30 hover:bg-zinc-900/50 transition-colors group cursor-pointer relative">
+                                <input
+                                    type="file"
+                                    accept=".txt,.md"
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0]
+                                        if (file) {
+                                            const reader = new FileReader()
+                                            reader.onload = (e) => {
+                                                const text = e.target?.result as string
+                                                setTempTextPreview(text)
+                                            }
+                                            reader.readAsText(file)
+                                        }
+                                    }}
+                                />
+                                <div className="bg-zinc-800 p-3 rounded-full group-hover:bg-zinc-700 transition-colors">
+                                    <StickyNote className="h-6 w-6 text-zinc-400 group-hover:text-zinc-200" />
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="font-medium text-sm text-zinc-200">Click to upload text file</p>
+                                    <p className="text-xs text-muted-foreground">Support for .txt, .md</p>
+                                </div>
+                            </div>
+                            {tempTextPreview && (
+                                <div className="h-64 border rounded-md p-4 overflow-y-auto bg-muted/10 font-mono text-xs whitespace-pre-wrap">
+                                    {tempTextPreview}
+                                </div>
+                            )}
+                            <DialogFooter>
+                                <Button
+                                    onClick={async () => {
+                                        if (tempTextPreview) {
+                                            setSaving(true)
+                                            try {
+                                                const user = (await supabase.auth.getUser()).data.user
+                                                if (!user) return
+
+                                                const { data, error } = await supabase
+                                                    .from('project_notes')
+                                                    .insert({
+                                                        content: tempTextPreview.replace(/\n/g, '<br/>'),
+                                                        project_id: projectId,
+                                                        user_id: user.id,
+                                                        type: 'text'
+                                                    })
+                                                    .select()
+                                                    .single()
+
+                                                if (error) throw error
+
+                                                setNotes(prev => [data, ...prev])
+                                                toast.success("Note imported successfully")
+                                                handleDialogOpenChange(false)
+                                            } catch (err) {
+                                                toast.error("Failed to save note")
+                                            } finally {
+                                                setSaving(false)
+                                            }
+                                        }
+                                    }}
+                                    disabled={!tempTextPreview || saving}
+                                >
+                                    {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Save as Note'}
+                                </Button>
+                            </DialogFooter>
+                        </TabsContent>
+
+                        {/* IMPORT IMAGE TAB */}
+                        <TabsContent value="image" className="flex flex-col m-0 space-y-4">
+                            <div className="border-2 border-dashed border-zinc-700 rounded-lg h-48 flex flex-col items-center justify-center text-center space-y-3 bg-zinc-900/30 hover:bg-zinc-900/50 transition-colors group cursor-pointer relative">
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-50"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0]
+                                        if (file) {
+                                            const url = URL.createObjectURL(file)
+                                            setTempImagePreview(url)
+                                            setTempImageFile(file)
+                                        }
+                                    }}
+                                />
+                                <div className="bg-zinc-800 p-3 rounded-full group-hover:bg-zinc-700 transition-colors">
+                                    <StickyNote className="h-6 w-6 text-zinc-400 group-hover:text-zinc-200" />
+                                </div>
+                                <div className="space-y-1">
+                                    <p className="font-medium text-sm text-zinc-200">Click to upload image</p>
+                                    <p className="text-xs text-muted-foreground">Support for .png, .jpg, .webp</p>
+                                </div>
+                            </div>
+                            {tempImagePreview && (
+                                <div className="h-64 border rounded-md p-4 flex items-center justify-center bg-zinc-950 overflow-hidden">
+                                    <img src={tempImagePreview} className="max-h-full max-w-full object-contain shadow-lg rounded-sm" />
+                                </div>
+                            )}
+                            <DialogFooter>
+                                <Button
+                                    onClick={async () => {
+                                        if (tempImageFile) {
+                                            setSaving(true)
+                                            try {
+                                                const fileName = `${Date.now()}-${tempImageFile.name.replace(/[^a-zA-Z0-9.-]/g, '')}`
+                                                const { data: uploadData, error: uploadError } = await supabase.storage
+                                                    .from('project-assets')
+                                                    .upload(fileName, tempImageFile)
+
+                                                if (uploadError) throw uploadError
+
+                                                const { data: { publicUrl } } = supabase.storage
+                                                    .from('project-assets')
+                                                    .getPublicUrl(fileName)
+
+                                                const user = (await supabase.auth.getUser()).data.user
+                                                if (!user) return
+
+                                                const { data, error } = await supabase
+                                                    .from('project_notes')
+                                                    .insert({
+                                                        content: tempImageFile.name,
+                                                        project_id: projectId,
+                                                        user_id: user.id,
+                                                        type: 'image',
+                                                        media_url: publicUrl
+                                                    })
+                                                    .select()
+                                                    .single()
+
+                                                if (error) throw error
+
+                                                setNotes(prev => [data, ...prev])
+                                                toast.success("Image note added")
+                                                handleDialogOpenChange(false)
+                                            } catch (err: any) {
+                                                toast.error("Failed to add image note. Ensure 'project-assets' bucket exists.")
+                                                console.error(err)
+                                            } finally {
+                                                setSaving(false)
+                                            }
+                                        }
+                                    }}
+                                    disabled={!tempImageFile || saving}
+                                >
+                                    {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Add to Notes'}
+                                </Button>
+                            </DialogFooter>
+                        </TabsContent>
+                    </Tabs>
+                </DialogContent>
+            </Dialog>
+
+            {
+                notes.length > 0 && (
+                    <div className="flex items-center gap-2 px-1">
+                        <div className="flex items-center space-x-2">
+                            <Checkbox
+                                id="select-all"
+                                checked={selectedIds.size === notes.length && notes.length > 0}
+                                onCheckedChange={toggleSelectAll}
+                            />
+                            <label
+                                htmlFor="select-all"
+                                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                            >
+                                Select All
+                            </label>
+                        </div>
+                        {selectedIds.size > 0 && <span className="text-xs text-muted-foreground ml-2">{selectedIds.size} selected</span>}
                     </div>
-                    {selectedIds.size > 0 && <span className="text-xs text-muted-foreground ml-2">{selectedIds.size} selected</span>}
-                </div>
-            )}
+                )
+            }
 
             <ScrollArea className="flex-1 -mx-4 px-4">
                 {loading ? (
@@ -754,6 +783,6 @@ export function ProjectNotes({ projectId }: ProjectNotesProps) {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-        </div>
+        </div >
     )
 }

@@ -15,7 +15,7 @@ import { BudgetManager } from '@/components/projects/BudgetManager'
 import { DocumentTable } from '@/components/documents/DocumentTable'
 import { ImportDocumentDialog } from '@/components/documents/ImportDocumentDialog'
 import { GenerateDocumentGlobalDialog } from '@/components/documents/GenerateDocumentGlobalDialog'
-import { formatDistanceToNow, differenceInDays } from 'date-fns'
+import { formatDistanceToNow, differenceInDays, differenceInBusinessDays } from 'date-fns'
 import { createClient } from '@/lib/supabase/client'
 
 interface ProjectDetailsClientProps {
@@ -278,7 +278,7 @@ export function ProjectDetailsClient({ project, documents, latestDocs, userId, i
                                                         <p className="font-semibold text-sm text-blue-500">Next Milestone</p>
                                                         <h4 className="font-bold text-lg">{data.nextMilestone.title}</h4>
                                                         <p className="text-sm text-muted-foreground">
-                                                            Due in {differenceInDays(new Date(data.nextMilestone.end_date), new Date().setHours(0, 0, 0, 0))} days
+                                                            Due in {differenceInBusinessDays(new Date(data.nextMilestone.end_date), new Date())} work days
                                                             <span className="mx-2">•</span>
                                                             {new Date(data.nextMilestone.end_date).toLocaleDateString()}
                                                         </p>

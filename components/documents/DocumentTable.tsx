@@ -370,20 +370,20 @@ export function DocumentTable({ documents, projectId }: DocumentTableProps) {
                             <Button
                                 size="sm"
                                 variant="ghost"
-                                className="h-8 text-xs hover:bg-blue-500/20 hover:text-blue-400 border border-transparent hover:border-white transition-all"
+                                className="h-8 text-xs text-zinc-300 hover:bg-blue-500/10 hover:text-blue-400 border border-transparent hover:border-blue-500/20 transition-all font-medium gap-1.5"
                                 onClick={handleBulkDownload}
                                 disabled={isBulkDeleting}
                             >
-                                {isBulkDeleting ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Download className="h-3.5 w-3.5 mr-1.5" />}
+                                {isBulkDeleting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
                                 Export Selected
                             </Button>
                             <Button
                                 size="sm"
-                                variant="destructive"
-                                className="h-8 text-xs border border-transparent hover:border-white transition-all"
+                                variant="ghost"
+                                className="h-8 text-xs text-zinc-300 hover:bg-red-500/10 hover:text-red-400 border border-transparent hover:border-red-500/20 transition-all font-medium gap-1.5"
                                 onClick={() => setConfirmBulkDelete(true)}
                             >
-                                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                                <Trash2 className="h-3.5 w-3.5" />
                                 Delete Selected
                             </Button>
                         </div>
