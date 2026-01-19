@@ -181,7 +181,7 @@ export function NewDocumentWizard({ projectId, onSuccess, onCancel }: NewDocumen
             return
         }
         if (step === 1 && !showForm) {
-            if (onCancel) onSuccess ? onSuccess() : onCancel() // Fallback
+            if (onCancel) onCancel()
             else router.back()
             return
         }

@@ -1,6 +1,5 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
 import { ObsidianLogo } from "@/components/ui/ObsidianLogo";
+import { LandingButtons } from "@/components/landing/LandingButtons";
 
 export default function Home() {
   return (
@@ -20,12 +19,7 @@ export default function Home() {
         </div>
 
         <div className="flex flex-col sm:flex-row gap-6 mt-8">
-          <Button asChild size="lg" className="h-12 px-8 text-base bg-[#0047AB] hover:bg-[#0055CC] text-white transition-all">
-            <Link href="/auth/signup">Get Started</Link>
-          </Button>
-          <Button variant="outline" asChild size="lg" className="h-12 px-8 text-base border-white/20 hover:bg-accent hover:border-accent hover:text-white transition-all backdrop-blur-sm">
-            <Link href="/auth/login">Login</Link>
-          </Button>
+          <LandingButtons />
         </div>
       </main>
       <footer className="relative z-10 p-8 text-sm text-muted-foreground/60">

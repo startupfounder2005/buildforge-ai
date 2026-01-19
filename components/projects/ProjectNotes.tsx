@@ -329,15 +329,15 @@ export function ProjectNotes({ projectId }: ProjectNotesProps) {
                 <div className="flex items-center gap-2">
                     {selectedIds.size > 0 && (
                         <>
-                            <Button variant="outline" onClick={handleBulkExport} disabled={isExporting}>
+                            <Button variant="outline" onClick={handleBulkExport} disabled={isExporting} className="border border-transparent hover:border-white transition-all">
                                 {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <><Save className="mr-2 h-4 w-4" /> Export ({selectedIds.size})</>}
                             </Button>
-                            <Button variant="destructive" onClick={handleBulkDelete}>
+                            <Button variant="destructive" onClick={handleBulkDelete} className="border border-transparent hover:border-white transition-all">
                                 <Trash2 className="mr-2 h-4 w-4" /> Delete ({selectedIds.size})
                             </Button>
                         </>
                     )}
-                    <Button onClick={() => setOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white gap-2 shadow-lg shadow-blue-900/20">
+                    <Button onClick={() => setOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white gap-2 shadow-lg shadow-blue-900/20 border border-transparent hover:border-white transition-all">
                         <Plus className="h-4 w-4" /> Add Note
                     </Button>
                 </div>
@@ -377,7 +377,7 @@ export function ProjectNotes({ projectId }: ProjectNotesProps) {
                                 </div>
                                 <DialogFooter className="mt-4">
                                     <Button variant="outline" onClick={() => handleDialogOpenChange(false)}>Cancel</Button>
-                                    <Button onClick={handleSave} disabled={saving || stripHtml(content).length > 2500}>
+                                    <Button onClick={handleSave} disabled={saving || stripHtml(content).length > 2500} className="border border-transparent hover:border-white transition-all">
                                         {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                         {editingNote ? 'Update Note' : 'Save Note'}
                                     </Button>
@@ -616,7 +616,7 @@ export function ProjectNotes({ projectId }: ProjectNotesProps) {
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                className="h-7 w-7 text-muted-foreground hover:bg-red-600 hover:text-white transition-colors shrink-0"
+                                                className="h-7 w-7 text-muted-foreground hover:bg-red-600 hover:text-white transition-colors shrink-0 border border-transparent hover:border-white"
                                                 onClick={(e) => handleDelete(e, note.id)}
                                             >
                                                 <Trash2 className="h-3.5 w-3.5" />
@@ -638,15 +638,15 @@ export function ProjectNotes({ projectId }: ProjectNotesProps) {
                                                     </span>
                                                     <DropdownMenu>
                                                         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                                            <Button variant="ghost" className="h-6 w-6 p-0 hover:bg-blue-500/10 hover:text-blue-400 transition-colors">
+                                                            <Button variant="ghost" className="h-6 w-6 p-0 hover:bg-blue-500/10 hover:text-blue-400 transition-colors border border-transparent hover:border-white">
                                                                 <MoreVertical className="h-3 w-3" />
                                                             </Button>
                                                         </DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
-                                                            <DropdownMenuItem onClick={(e) => openEdit(e, note)}>
+                                                            <DropdownMenuItem className="cursor-pointer border border-transparent hover:border-white transition-all" onClick={(e) => openEdit(e, note)}>
                                                                 <Pencil className="mr-2 h-3 w-3" /> Edit
                                                             </DropdownMenuItem>
-                                                            <DropdownMenuItem className="text-red-500 focus:text-white focus:bg-red-600" onClick={(e) => handleDelete(e, note.id)}>
+                                                            <DropdownMenuItem className="text-red-500 focus:text-white focus:bg-red-600 cursor-pointer border border-transparent hover:border-white transition-all" onClick={(e) => handleDelete(e, note.id)}>
                                                                 <Trash2 className="mr-2 h-3 w-3" /> Delete
                                                             </DropdownMenuItem>
                                                         </DropdownMenuContent>

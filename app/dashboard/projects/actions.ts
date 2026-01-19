@@ -7,11 +7,11 @@ import { z } from 'zod'
 
 const projectSchema = z.object({
     name: z.string().min(1, "Name is required"),
-    location: z.string().optional().nullable(),
+    location: z.string().min(1, "Location is required"),
     description: z.string().optional().nullable(),
     status: z.string().optional().nullable(), // Added status
     notes: z.string().optional().nullable(), // Added notes
-    due_date: z.string().optional().nullable(), // Added due_date as optional string
+    due_date: z.string().min(1, "Due Date is required"),
     budget: z.string().optional().nullable(), // Added budget
 })
 
@@ -97,6 +97,20 @@ export async function createProject(prevState: any, formData: FormData) {
             user_id: user.id,
             content: validatedFields.data.notes
         })
+    }
+
+    // Trigger Notification
+    try {
+        await supabase.from('notifications').insert({
+            user_id: user.id,
+            type: 'project',
+            title: 'Project Created',
+            message: `Project "${newProject.name}" has been successfully created.`,
+            link: `/dashboard/projects/${newProject.id}`,
+            is_read: false
+        })
+    } catch (notifError) {
+        console.error("Project Creation Notification Failed:", notifError)
     }
 
     // Log Usage (Immutable)

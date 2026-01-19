@@ -4,15 +4,17 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
-import { Plus, FileText, Calendar, Clock, ArrowLeft, TrendingUp, AlertTriangle, CheckCircle } from "lucide-react"
+import { Plus, FileText, Calendar, Clock, ArrowLeft, TrendingUp, AlertTriangle, CheckCircle, Loader2 } from "lucide-react"
 import Link from 'next/link'
 import { ProjectTimeline } from '@/components/projects/ProjectTimeline'
 import { ProjectNotes } from '@/components/projects/ProjectNotes'
 import { BudgetManager } from '@/components/projects/BudgetManager'
 import { DocumentTable } from '@/components/documents/DocumentTable'
 import { ImportDocumentDialog } from '@/components/documents/ImportDocumentDialog'
+import { GenerateDocumentGlobalDialog } from '@/components/documents/GenerateDocumentGlobalDialog'
 import { formatDistanceToNow, differenceInDays } from 'date-fns'
 import { createClient } from '@/lib/supabase/client'
 
@@ -110,16 +112,36 @@ export function ProjectDetailsClient({ project, documents, latestDocs, userId, i
                     </Link>
                     <div>
                         <h2 className="text-3xl font-bold tracking-tight">{project.name}</h2>
-                        <p className="text-muted-foreground capitalize">{project.status} • {project.location}</p>
+                        <div className="flex items-center gap-2 mt-1">
+                            <Badge
+                                variant="outline"
+                                className={`capitalize font-medium border ${project.status === 'planning'
+                                    ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                                    : project.status === 'active'
+                                        ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                                        : "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                                    }`}
+                            >
+                                {project.status}
+                            </Badge>
+                            <span className="text-muted-foreground">•</span>
+                            <span className="text-muted-foreground">{project.location}</span>
+                        </div>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
                     <ImportDocumentDialog projectId={project.id} userId={userId} />
-                    <Link href={`/dashboard/projects/${project.id}/generate`}>
-                        <Button variant="outline" className="gap-2">
-                            <Plus className="h-4 w-4" /> Generate Doc
-                        </Button>
-                    </Link>
+                    <GenerateDocumentGlobalDialog
+                        projects={[]}
+                        userId={userId}
+                        defaultProjectId={project.id}
+                        customTrigger={({ isLoading }) => (
+                            <Button variant="outline" className="gap-2" disabled={isLoading}>
+                                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                                Generate Doc
+                            </Button>
+                        )}
+                    />
                 </div>
             </div>
 
@@ -338,7 +360,7 @@ export function ProjectDetailsClient({ project, documents, latestDocs, userId, i
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.2 }}
                         >
-                            <DocumentTable documents={documents || []} />
+                            <DocumentTable documents={documents || []} projectId={project.id} />
                         </motion.div>
                     )}
 

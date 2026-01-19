@@ -95,7 +95,7 @@ export default async function AccountPage({
     startOfMonth.setHours(0, 0, 0, 0)
 
     const { count: docsCount } = await supabase
-        .from('documents')
+        .from('document_generations')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
         .gte('created_at', startOfMonth.toISOString())
@@ -104,14 +104,17 @@ export default async function AccountPage({
     // If Pro, we say limit is -1 to indicate Unlimited in UI
     const docsLimit = isPro ? -1 : 5
 
-    // Projects Statistics
+    // Projects Statistics (Monthly Creation Limit)
     const { count: projectsCount } = await supabase
-        .from('projects')
+        .from('project_generations')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
+        .gte('created_at', startOfMonth.toISOString())
 
     const projectsUsed = projectsCount || 0
     const projectsLimit = isPro ? -1 : 1
+
+
 
     // --- Storage Calculations ---
     const { data: allStorageDocs } = await supabase
@@ -135,7 +138,7 @@ export default async function AccountPage({
     sixMonthsAgo.setHours(0, 0, 0, 0)
 
     const { data: allDocs } = await supabase
-        .from('documents')
+        .from('document_generations')
         .select('created_at')
         .eq('user_id', user.id)
         .gte('created_at', sixMonthsAgo.toISOString())

@@ -32,6 +32,8 @@ import { format } from "date-fns"
 import { toast } from "sonner"
 import { deleteDocument, deleteDocuments } from "@/app/dashboard/projects/actions"
 import { jsPDF } from "jspdf"
+import JSZip from 'jszip'
+import { saveAs } from 'file-saver'
 import ReactMarkdown from 'react-markdown'
 import { AnimatePresence, motion } from 'framer-motion'
 
@@ -48,12 +50,13 @@ import {
 
 interface DocumentTableProps {
     documents: any[]
+    projectId?: string
 }
 
 import { DocumentDetailsSheet } from './DocumentDetailsSheet'
 import { GenerateDocumentGlobalDialog } from './GenerateDocumentGlobalDialog'
 
-export function DocumentTable({ documents }: DocumentTableProps) {
+export function DocumentTable({ documents, projectId }: DocumentTableProps) {
     const [deletingId, setDeletingId] = useState<string | null>(null)
     const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
     const [previewDoc, setPreviewDoc] = useState<any | null>(null)
@@ -236,6 +239,101 @@ export function DocumentTable({ documents }: DocumentTableProps) {
         }
     }
 
+    // Helper: Generate PDF Blob for AI Docs (internal for bulk)
+    const generatePdfBlob = (doc: any): Promise<Blob> | null => {
+        if (doc.content_json?.pdf_base64) {
+            return fetch(`data:application/pdf;base64,${doc.content_json.pdf_base64}`).then(res => res.blob())
+        }
+
+        return new Promise((resolve) => {
+            let content = typeof doc.content_json === 'object'
+                ? (doc.content_json.raw || JSON.stringify(doc.content_json, null, 2))
+                : "No content available."
+
+            const pdf = new jsPDF()
+            let y = 20
+            const margin = 20
+            const pageWidth = 170
+
+            // Header
+            pdf.setFont("times", "bold")
+            pdf.setFontSize(22)
+            pdf.text(doc.title, margin, y)
+            y += 10
+
+            // Meta
+            pdf.setFont("helvetica", "normal")
+            pdf.setFontSize(10)
+            pdf.setTextColor(100)
+            pdf.text(`Type: ${doc.type} | Version: ${doc.version || 1} | Date: ${format(new Date(doc.created_at), 'MMM dd, yyyy')}`, margin, y)
+            y += 15
+
+            // Content
+            pdf.setFont("times", "normal")
+            pdf.setFontSize(12)
+            pdf.setTextColor(0)
+
+            const lines = content.split('\n')
+            lines.forEach((line: string) => {
+                if (y > 280) {
+                    pdf.addPage()
+                    y = 20
+                }
+                const cleanLine = line.replace(/\*\*/g, '').replace(/###/g, '')
+                if (cleanLine.trim().length === 0) {
+                    y += 5
+                    return
+                }
+                const splitText = pdf.splitTextToSize(cleanLine, pageWidth)
+                pdf.text(splitText, margin, y)
+                y += (splitText.length * 5) + 2
+            })
+
+            resolve(pdf.output('blob'))
+        })
+    }
+
+    const handleBulkDownload = async () => {
+        if (selectedDocIds.length === 0) return
+        setIsBulkDeleting(true) // Reuse loading state for Export (it's internal to the bar)
+        const zip = new JSZip()
+        let count = 0
+
+        try {
+            const docsToDownload = docs.filter(d => selectedDocIds.includes(d.id))
+
+            for (const doc of docsToDownload) {
+                if (doc.file_url) {
+                    const response = await fetch(doc.file_url)
+                    const blob = await response.blob()
+                    const ext = doc.file_url.split('.').pop()?.split('?')[0] || 'pdf'
+                    zip.file(`${doc.title}.${ext}`, blob)
+                    count++
+                } else {
+                    const blob = await generatePdfBlob(doc)
+                    if (blob) {
+                        zip.file(`${doc.title}.pdf`, blob)
+                        count++
+                    }
+                }
+            }
+
+            if (count > 0) {
+                const content = await zip.generateAsync({ type: "blob" })
+                saveAs(content, "documents_export.zip")
+                toast.success(`Exported ${count} documents.`)
+            } else {
+                toast.error("No valid files to download.")
+            }
+        } catch (e) {
+            console.error(e)
+            toast.error("Failed to export documents.")
+        } finally {
+            setIsBulkDeleting(false)
+            setSelectedDocIds([])
+        }
+    }
+
     if (!documents || documents.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-12 text-center border rounded-lg border-dashed">
@@ -244,11 +342,12 @@ export function DocumentTable({ documents }: DocumentTableProps) {
                 <p className="text-sm text-muted-foreground max-w-sm mt-1 mb-4">
                     Generate pending permits, contracts, or bid packages.
                 </p>
-                <GenerateDocumentGlobalDialog projects={[]} userId="" customTrigger={
-                    <Button>
-                        <FileText className="mr-2 h-4 w-4" /> Generate Document
+                <GenerateDocumentGlobalDialog projects={[]} userId="" defaultProjectId={projectId} customTrigger={({ isLoading }) => (
+                    <Button disabled={isLoading}>
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
+                        Generate Document
                     </Button>
-                } />
+                )} />
             </div>
         )
     }
@@ -267,15 +366,27 @@ export function DocumentTable({ documents }: DocumentTableProps) {
                         <span className="text-sm font-medium text-blue-400">
                             {selectedDocIds.length} selected
                         </span>
-                        <Button
-                            size="sm"
-                            variant="destructive"
-                            className="h-8 text-xs"
-                            onClick={() => setConfirmBulkDelete(true)}
-                        >
-                            <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                            Delete Selected
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 text-xs hover:bg-blue-500/20 hover:text-blue-400 border border-transparent hover:border-white transition-all"
+                                onClick={handleBulkDownload}
+                                disabled={isBulkDeleting}
+                            >
+                                {isBulkDeleting ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Download className="h-3.5 w-3.5 mr-1.5" />}
+                                Export Selected
+                            </Button>
+                            <Button
+                                size="sm"
+                                variant="destructive"
+                                className="h-8 text-xs border border-transparent hover:border-white transition-all"
+                                onClick={() => setConfirmBulkDelete(true)}
+                            >
+                                <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+                                Delete Selected
+                            </Button>
+                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -346,7 +457,7 @@ export function DocumentTable({ documents }: DocumentTableProps) {
                                 <TableCell className="text-right">
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" className="h-8 w-8 p-0">
+                                            <Button variant="ghost" className="h-8 w-8 p-0 border border-transparent hover:border-white transition-all">
                                                 <span className="sr-only">Open menu</span>
                                                 <MoreHorizontal className="h-4 w-4" />
                                             </Button>
@@ -354,7 +465,7 @@ export function DocumentTable({ documents }: DocumentTableProps) {
                                         <DropdownMenuContent align="end">
                                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                             <DropdownMenuItem
-                                                className="focus:bg-zinc-800 focus:text-white cursor-pointer"
+                                                className="focus:bg-zinc-800 focus:text-white cursor-pointer border border-transparent hover:border-white transition-all"
                                                 onClick={() => {
                                                     if (doc.file_url) {
                                                         window.open(doc.file_url, '_blank')
@@ -371,7 +482,7 @@ export function DocumentTable({ documents }: DocumentTableProps) {
                                             </DropdownMenuItem>
                                             {!doc.file_url && (
                                                 <DropdownMenuItem
-                                                    className="focus:bg-blue-600 focus:text-white cursor-pointer"
+                                                    className="focus:bg-blue-600 focus:text-white cursor-pointer border border-transparent hover:border-white transition-all"
                                                     onClick={() => handleDownload(doc)}
                                                 >
                                                     <Download className="mr-2 h-4 w-4" /> Download PDF
@@ -379,7 +490,7 @@ export function DocumentTable({ documents }: DocumentTableProps) {
                                             )}
                                             <DropdownMenuSeparator />
                                             <DropdownMenuItem
-                                                className="text-red-600 focus:bg-red-600 focus:text-white cursor-pointer"
+                                                className="text-red-600 focus:bg-red-600 focus:text-white cursor-pointer border border-transparent hover:border-white transition-all"
                                                 onClick={() => handleDeleteClick(doc.id)}
                                                 disabled={deletingId === doc.id}
                                             >

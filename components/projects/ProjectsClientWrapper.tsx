@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select"
 import Link from 'next/link'
 import { format } from 'date-fns'
-import { Search, Filter, MoreHorizontal, Eye, Trash2, Edit, Plus } from 'lucide-react'
+import { Search, Filter, MoreHorizontal, Eye, Trash2, Edit, Plus, Loader2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { ProjectStats } from './ProjectStats'
 import { ProjectDialog } from './ProjectDialog'
@@ -64,6 +64,10 @@ export function ProjectsClientWrapper({ initialProjects, plan }: ProjectsClientW
     const [editDialogOpen, setEditDialogOpen] = useState(false)
     const [projectToEdit, setProjectToEdit] = useState<any>(null)
 
+    // Create State
+    const [createDialogOpen, setCreateDialogOpen] = useState(false)
+    const [isCreateLoading, setIsCreateLoading] = useState(false)
+
     const isFree = plan === 'free'
     const projectLimitReached = isFree && initialProjects.length >= 1
 
@@ -75,6 +79,14 @@ export function ProjectsClientWrapper({ initialProjects, plan }: ProjectsClientW
     const handleEditClick = (project: any) => {
         setProjectToEdit(project)
         setEditDialogOpen(true)
+    }
+
+    const handleCreateClick = () => {
+        setIsCreateLoading(true)
+        setTimeout(() => {
+            setCreateDialogOpen(true)
+            setIsCreateLoading(false)
+        }, 500)
     }
 
     const confirmDelete = async () => {
@@ -109,16 +121,25 @@ export function ProjectsClientWrapper({ initialProjects, plan }: ProjectsClientW
                 {projectLimitReached ? (
                     <Button
                         onClick={() => setUpgradeOpen(true)}
-                        className="hover:bg-blue-600 transition-colors"
+                        className="hover:bg-blue-600 transition-all border border-transparent hover:border-white"
                     >
                         <Plus className="mr-2 h-4 w-4" /> New Project
                     </Button>
                 ) : (
-                    <ProjectDialog>
-                        <Button className="hover:bg-blue-600 transition-colors">
-                            <Plus className="mr-2 h-4 w-4" /> New Project
+                    <>
+                        <Button
+                            onClick={handleCreateClick}
+                            disabled={isCreateLoading}
+                            className="hover:bg-blue-600 transition-all border border-transparent hover:border-white"
+                        >
+                            {isCreateLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+                            New Project
                         </Button>
-                    </ProjectDialog>
+                        <ProjectDialog
+                            open={createDialogOpen}
+                            onOpenChange={setCreateDialogOpen}
+                        />
+                    </>
                 )}
             </div>
 
@@ -148,7 +169,7 @@ export function ProjectsClientWrapper({ initialProjects, plan }: ProjectsClientW
                                 />
                             </div>
                             <Select value={statusFilter} onValueChange={setStatusFilter}>
-                                <SelectTrigger className="w-[180px]">
+                                <SelectTrigger className="w-[180px] bg-zinc-900 border-zinc-800 hover:bg-zinc-800 hover:border-white transition-all">
                                     <Filter className="mr-2 h-4 w-4" />
                                     <SelectValue placeholder="Status" />
                                 </SelectTrigger>
@@ -197,7 +218,15 @@ export function ProjectsClientWrapper({ initialProjects, plan }: ProjectsClientW
                                         </TableCell>
                                         <TableCell>{project.location || '—'}</TableCell>
                                         <TableCell>
-                                            <Badge variant={project.status === 'active' ? 'default' : 'secondary'} className="capitalize">
+                                            <Badge
+                                                variant="outline"
+                                                className={`capitalize font-medium border ${project.status === 'planning'
+                                                    ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
+                                                    : project.status === 'active'
+                                                        ? "bg-blue-500/10 text-blue-400 border-blue-500/20"
+                                                        : "bg-emerald-500/10 text-emerald-500 border-emerald-500/20"
+                                                    }`}
+                                            >
                                                 {project.status}
                                             </Badge>
                                         </TableCell>
@@ -207,24 +236,27 @@ export function ProjectsClientWrapper({ initialProjects, plan }: ProjectsClientW
                                         <TableCell className="text-right">
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" className="h-8 w-8 p-0">
+                                                    <Button variant="ghost" className="h-8 w-8 p-0 border border-transparent hover:border-white transition-all">
                                                         <span className="sr-only">Open menu</span>
                                                         <MoreHorizontal className="h-4 w-4" />
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                    <DropdownMenuItem asChild>
+                                                    <DropdownMenuItem asChild className="cursor-pointer border border-transparent hover:border-white transition-all">
                                                         <Link href={`/dashboard/projects/${project.id}`}>
                                                             <Eye className="mr-2 h-4 w-4" /> View Details
                                                         </Link>
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleEditClick(project)}>
+                                                    <DropdownMenuItem
+                                                        onClick={() => handleEditClick(project)}
+                                                        className="cursor-pointer border border-transparent hover:border-white transition-all"
+                                                    >
                                                         <Edit className="mr-2 h-4 w-4" /> Edit Project
                                                     </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem
-                                                        className="text-red-600 focus:bg-red-600 focus:text-white cursor-pointer"
+                                                        className="text-red-600 focus:bg-red-600 focus:text-white cursor-pointer border border-transparent hover:border-white transition-all"
                                                         onClick={() => handleDeleteClick(project.id)}
                                                     >
                                                         <Trash2 className="mr-2 h-4 w-4" /> Delete Project
@@ -268,6 +300,6 @@ export function ProjectsClientWrapper({ initialProjects, plan }: ProjectsClientW
                 open={editDialogOpen}
                 onOpenChange={setEditDialogOpen}
             />
-        </div>
+        </div >
     )
 }

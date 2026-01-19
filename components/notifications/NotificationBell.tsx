@@ -69,7 +69,7 @@ export function NotificationBell() {
     return (
         <Popover open={isOpen} onOpenChange={setIsOpen}>
             <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative group">
+                <Button variant="ghost" size="icon" className="relative group border border-transparent hover:border-white transition-all">
                     <Bell className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
                     <AnimatePresence>
                         {unreadCount > 0 && (

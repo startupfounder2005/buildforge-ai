@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select"
 import { createProject, updateProject } from '@/app/dashboard/projects/actions'
 import { toast } from 'sonner'
-import { Plus } from 'lucide-react'
+import { Plus, Loader2 } from 'lucide-react'
 import { getDaysInMonth } from 'date-fns'
 
 interface ProjectDialogProps {
@@ -101,6 +101,10 @@ export function ProjectDialog({ project, open: controlledOpen, onOpenChange: set
         if (month && day && year) {
             const dateObj = new Date(parseInt(year), parseInt(month), parseInt(day))
             formData.set('due_date', dateObj.toISOString())
+        } else {
+            toast.error("Please select a valid due date.")
+            setLoading(false)
+            return
         }
 
         formData.set('status', status)
@@ -142,7 +146,7 @@ export function ProjectDialog({ project, open: controlledOpen, onOpenChange: set
                     <div className="grid gap-4 py-4">
                         {/* Name */}
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="name" className="text-right">Name</Label>
+                            <Label htmlFor="name" className="text-right">Name <span className="text-red-500">*</span></Label>
                             <Input
                                 id="name"
                                 name="name"
@@ -155,13 +159,14 @@ export function ProjectDialog({ project, open: controlledOpen, onOpenChange: set
 
                         {/* Location */}
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="location" className="text-right">Location</Label>
+                            <Label htmlFor="location" className="text-right">Location <span className="text-red-500">*</span></Label>
                             <Input
                                 id="location"
                                 name="location"
                                 defaultValue={project?.location}
                                 placeholder="123 Main St"
                                 className="col-span-3"
+                                required
                             />
                         </div>
 
@@ -200,7 +205,7 @@ export function ProjectDialog({ project, open: controlledOpen, onOpenChange: set
 
                         {/* Due Date (3 Selects) */}
                         <div className="grid grid-cols-4 items-center gap-4">
-                            <Label className="text-right ">Due Date</Label>
+                            <Label className="text-right">Due Date <span className="text-red-500">*</span></Label>
                             <div className="col-span-3 flex gap-2">
                                 {/* Month */}
                                 <Select value={month} onValueChange={setMonth}>
@@ -264,7 +269,7 @@ export function ProjectDialog({ project, open: controlledOpen, onOpenChange: set
                     </div>
                     <DialogFooter>
                         <Button type="submit" disabled={loading} className="bg-[#0047AB] hover:bg-[#0055CC] text-white transition-colors">
-                            {loading ? (project ? 'Updating...' : 'Creating...') : (project ? 'Save Changes' : 'Create Project')}
+                            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : (project ? 'Save Changes' : 'Create Project')}
                         </Button>
                     </DialogFooter>
                 </form>

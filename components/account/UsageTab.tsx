@@ -107,7 +107,7 @@ export function UsageTab({ usage }: { usage?: UsageStats }) {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Active Projects</CardTitle>
+                        <CardTitle className="text-sm font-medium">Projects Created</CardTitle>
                         <FileText className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
@@ -115,7 +115,7 @@ export function UsageTab({ usage }: { usage?: UsageStats }) {
                             <>
                                 <div className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">Unlimited</div>
                                 <p className="text-xs text-muted-foreground mb-4">
-                                    {stats.projectsUsed} active projects
+                                    {stats.projectsUsed} projects created this month
                                 </p>
                                 <Progress value={100} className="h-2 bg-blue-950" indicatorClassName="bg-gradient-to-r from-blue-500 to-indigo-500" />
                             </>

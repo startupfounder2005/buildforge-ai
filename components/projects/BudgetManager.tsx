@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/progress'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { Plus, DollarSign, TrendingUp, MoreVertical, Pencil, Trash, CheckSquare } from 'lucide-react'
+import { Plus, DollarSign, TrendingUp, MoreVertical, Pencil, Trash, CheckSquare, Loader2 } from 'lucide-react'
 import { updateProjectBudget, addExpense, deleteExpense, deleteExpenses, updateExpense } from '@/app/dashboard/projects/actions'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
@@ -43,6 +43,10 @@ export function BudgetManager({ projectId, initialBudget, initialExpenses }: Bud
     const [bulkDeleteConfirmOpen, setBulkDeleteConfirmOpen] = useState(false)
     const [selectedExpenses, setSelectedExpenses] = useState<Set<string>>(new Set())
     const [isPending, startTransition] = useTransition()
+
+    // Loading Triggers
+    const [isLoadingBudgetTrigger, setIsLoadingBudgetTrigger] = useState(false)
+    const [isLoadingExpenseTrigger, setIsLoadingExpenseTrigger] = useState(false)
 
     // Sync state with props when server revalidates
     useEffect(() => {
@@ -250,6 +254,23 @@ export function BudgetManager({ projectId, initialBudget, initialExpenses }: Bud
         setIsEditExpenseOpen(true)
     }
 
+    const handleOpenBudget = () => {
+        setIsLoadingBudgetTrigger(true)
+        setTimeout(() => {
+            setIsBudgetOpen(true)
+            setLocalBudgetInput(budget.toString())
+            setIsLoadingBudgetTrigger(false)
+        }, 500)
+    }
+
+    const handleOpenExpense = () => {
+        setIsLoadingExpenseTrigger(true)
+        setTimeout(() => {
+            setIsExpenseOpen(true)
+            setIsLoadingExpenseTrigger(false)
+        }, 500)
+    }
+
     return (
         <Card className="col-span-1 md:col-span-2 h-full">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -274,13 +295,20 @@ export function BudgetManager({ projectId, initialBudget, initialExpenses }: Bud
                         </Button>
                     )}
 
+                    {/* Replace DialogTrigger with Controlled Button for Budget */}
+                    <Button
+                        variant="outline"
+                        onClick={handleOpenBudget}
+                        disabled={isLoadingBudgetTrigger}
+                        className="h-9 px-3 text-xs font-medium border-zinc-700 bg-zinc-900/50 hover:bg-[#7C3AED] hover:text-white transition-colors"
+                    >
+                        {isLoadingBudgetTrigger ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Set Budget"}
+                    </Button>
+
                     <Dialog open={isBudgetOpen} onOpenChange={(open) => {
                         setIsBudgetOpen(open)
                         if (open) setLocalBudgetInput(budget.toString())
                     }}>
-                        <DialogTrigger asChild>
-                            <Button variant="outline" className="h-9 px-3 text-xs font-medium border-zinc-700 bg-zinc-900/50 hover:bg-zinc-800 text-zinc-300 hover:text-white">Set Budget</Button>
-                        </DialogTrigger>
                         <DialogContent>
                             <DialogHeader>
                                 <DialogTitle>Set Project Budget</DialogTitle>
@@ -306,75 +334,85 @@ export function BudgetManager({ projectId, initialBudget, initialExpenses }: Bud
                                 </div>
                             </div>
                             <DialogFooter>
-                                <Button onClick={handleUpdateBudget} disabled={isPending}>Save Budget</Button>
+                                <Button onClick={handleUpdateBudget} disabled={isPending}>
+                                    {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save Budget"}
+                                </Button>
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>
 
                     {budget > 0 && (
-                        <Dialog open={isExpenseOpen} onOpenChange={setIsExpenseOpen}>
-                            <DialogTrigger asChild>
-                                <Button className="h-9 px-3 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white gap-1.5 shadow-sm">
-                                    <Plus className="h-3.5 w-3.5" /> Expense
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>Log Expense</DialogTitle>
-                                </DialogHeader>
-                                <div className="space-y-4 py-4">
-                                    <div className="space-y-2">
-                                        <Label>Description</Label>
-                                        <Input
-                                            placeholder="e.g. Concrete mix"
-                                            value={newExpense.description}
-                                            onChange={(e) => setNewExpense({ ...newExpense, description: e.target.value })}
-                                        />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
+                        <>
+                            <Button
+                                onClick={handleOpenExpense}
+                                disabled={isLoadingExpenseTrigger}
+                                className="h-9 px-3 text-xs font-medium bg-blue-600 hover:bg-blue-700 text-white gap-1.5 shadow-sm"
+                            >
+                                {isLoadingExpenseTrigger ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
+                                {isLoadingExpenseTrigger ? null : "Expense"}
+                            </Button>
+
+                            <Dialog open={isExpenseOpen} onOpenChange={setIsExpenseOpen}>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>Log Expense</DialogTitle>
+                                    </DialogHeader>
+                                    <div className="space-y-4 py-4">
                                         <div className="space-y-2">
-                                            <Label>Amount ($)</Label>
+                                            <Label>Description</Label>
                                             <Input
-                                                type="number"
-                                                placeholder="0.00"
-                                                value={newExpense.amount}
-                                                onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
-                                                className="no-spinner"
+                                                placeholder="e.g. Concrete mix"
+                                                value={newExpense.description}
+                                                onChange={(e) => setNewExpense({ ...newExpense, description: e.target.value })}
                                             />
                                         </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label>Amount ($)</Label>
+                                                <Input
+                                                    type="number"
+                                                    placeholder="0.00"
+                                                    value={newExpense.amount}
+                                                    onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
+                                                    className="no-spinner"
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Category</Label>
+                                                <Select
+                                                    value={newExpense.category}
+                                                    onValueChange={(val) => setNewExpense({ ...newExpense, category: val })}
+                                                >
+                                                    <SelectTrigger>
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="Material">Material</SelectItem>
+                                                        <SelectItem value="Labor">Labor</SelectItem>
+                                                        <SelectItem value="Permit">Permit</SelectItem>
+                                                        <SelectItem value="Subcontractor">Subcontractor</SelectItem>
+                                                        <SelectItem value="Other">Other</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
                                         <div className="space-y-2">
-                                            <Label>Category</Label>
-                                            <Select
-                                                value={newExpense.category}
-                                                onValueChange={(val) => setNewExpense({ ...newExpense, category: val })}
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="Material">Material</SelectItem>
-                                                    <SelectItem value="Labor">Labor</SelectItem>
-                                                    <SelectItem value="Permit">Permit</SelectItem>
-                                                    <SelectItem value="Subcontractor">Subcontractor</SelectItem>
-                                                    <SelectItem value="Other">Other</SelectItem>
-                                                </SelectContent>
-                                            </Select>
+                                            <Label>Date</Label>
+                                            <Input
+                                                type="date"
+                                                value={newExpense.date}
+                                                onChange={(e) => setNewExpense({ ...newExpense, date: e.target.value })}
+                                            />
                                         </div>
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label>Date</Label>
-                                        <Input
-                                            type="date"
-                                            value={newExpense.date}
-                                            onChange={(e) => setNewExpense({ ...newExpense, date: e.target.value })}
-                                        />
-                                    </div>
-                                </div>
-                                <DialogFooter>
-                                    <Button onClick={handleAddExpense} disabled={isPending}>Add Expense</Button>
-                                </DialogFooter>
-                            </DialogContent>
-                        </Dialog>
+                                    <DialogFooter>
+                                        <Button onClick={handleAddExpense} disabled={isPending}>
+                                            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Add Expense"}
+                                        </Button>
+                                    </DialogFooter>
+                                </DialogContent>
+                            </Dialog>
+                        </>
                     )}
 
                     <AlertDialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
@@ -386,8 +424,10 @@ export function BudgetManager({ projectId, initialBudget, initialExpenses }: Bud
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={executeDeleteExpense} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                                <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={(e) => { e.preventDefault(); executeDeleteExpense() }} className="bg-red-600 hover:bg-red-700" disabled={isPending}>
+                                    {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete"}
+                                </AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
@@ -401,9 +441,9 @@ export function BudgetManager({ projectId, initialBudget, initialExpenses }: Bud
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={executeBulkDelete} className="bg-red-600 hover:bg-red-700">
-                                    {selectedExpenses.size === 1 ? 'Delete' : 'Delete All'}
+                                <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={(e) => { e.preventDefault(); executeBulkDelete() }} className="bg-red-600 hover:bg-red-700" disabled={isPending}>
+                                    {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : (selectedExpenses.size === 1 ? 'Delete' : 'Delete All')}
                                 </AlertDialogAction>
                             </AlertDialogFooter>
                         </AlertDialogContent>
@@ -466,7 +506,9 @@ export function BudgetManager({ projectId, initialBudget, initialExpenses }: Bud
                                 </div>
                             )}
                             <DialogFooter>
-                                <Button onClick={handleEditExpense} disabled={isPending}>Update Expense</Button>
+                                <Button onClick={handleEditExpense} disabled={isPending}>
+                                    {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Update Expense"}
+                                </Button>
                             </DialogFooter>
                         </DialogContent>
                     </Dialog>
@@ -503,10 +545,7 @@ export function BudgetManager({ projectId, initialBudget, initialExpenses }: Bud
                         <Button
                             variant="link"
                             className="text-blue-500 h-auto p-0 text-xs mt-1"
-                            onClick={() => {
-                                setLocalBudgetInput('')
-                                setIsBudgetOpen(true)
-                            }}
+                            onClick={handleOpenBudget}
                         >
                             Set a Budget
                         </Button>
@@ -555,15 +594,15 @@ export function BudgetManager({ projectId, initialBudget, initialExpenses }: Bud
                                             <span className="text-red-400 text-sm font-mono">-${expense.amount.toLocaleString()}</span>
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity border border-transparent hover:border-white">
                                                         <MoreVertical className="h-3 w-3" />
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onClick={() => openEditDialog(expense)}>
+                                                    <DropdownMenuItem className="cursor-pointer border border-transparent hover:border-white transition-all" onClick={() => openEditDialog(expense)}>
                                                         <Pencil className="mr-2 h-3 w-3" /> Edit
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem className="text-red-500 focus:text-white focus:bg-red-600" onClick={() => handleDeleteExpense(expense.id)}>
+                                                    <DropdownMenuItem className="text-red-500 focus:text-white focus:bg-red-600 cursor-pointer border border-transparent hover:border-white transition-all" onClick={() => handleDeleteExpense(expense.id)}>
                                                         <Trash className="mr-2 h-3 w-3" /> Delete
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>

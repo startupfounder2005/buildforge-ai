@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { useEffect, useState, useCallback, memo } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
-import { Plus, Loader2, Calendar, CheckCircle, MoreVertical, Sparkles, Trash2, CheckSquare, XSquare } from "lucide-react"
+import { Plus, Loader2, Calendar, CheckCircle, MoreVertical, MoreHorizontal, Sparkles, Trash2, CheckCircle2, Clock, Edit } from "lucide-react"
 import {
     Dialog,
     DialogContent,
@@ -106,18 +106,18 @@ const MilestoneItem = memo(({
                                 <h4 className={`font-semibold text-base ${isCompleted ? 'line-through text-muted-foreground' : 'text-foreground'}`}>{m.title}</h4>
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <MoreVertical className="h-4 w-4" />
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity border border-transparent hover:border-white">
+                                            <MoreHorizontal className="h-4 w-4" />
                                         </Button>
                                     </DropdownMenuTrigger>
                                     <DropdownMenuContent align="end">
-                                        <DropdownMenuItem onClick={() => onStatusToggle(m.id, m.status)}>
+                                        <DropdownMenuItem className="cursor-pointer border border-transparent hover:border-white transition-all" onClick={() => onStatusToggle(m.id, m.status)}>
                                             Mark as {isCompleted ? 'Pending' : 'Completed'}
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => onEdit(m)}>
+                                        <DropdownMenuItem className="cursor-pointer border border-transparent hover:border-white transition-all" onClick={() => onEdit(m)}>
                                             Edit Details
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem className="text-red-600 focus:text-white focus:bg-red-600" onClick={() => onDelete(m.id)}>
+                                        <DropdownMenuItem className="text-red-600 focus:text-white focus:bg-red-600 cursor-pointer border border-transparent hover:border-white transition-all" onClick={() => onDelete(m.id)}>
                                             Delete
                                         </DropdownMenuItem>
                                     </DropdownMenuContent>
@@ -372,16 +372,16 @@ export function ProjectTimeline({ project }: ProjectTimelineProps) {
                             className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-2 px-4 flex items-center justify-between overflow-hidden"
                         >
                             <span className="text-sm font-medium text-blue-400">{selectedIds.length} selected</span>
-                            <div className="flex gap-2">
-                                <Button size="sm" variant="ghost" className="h-8 hover:bg-blue-500/20 hover:text-blue-400" onClick={() => handleBulkStatus('completed')}>
-                                    <CheckSquare className="h-4 w-4 mr-2" /> Mark Complete
+                            <div className="flex items-center gap-2">
+                                <Button size="sm" variant="ghost" className="h-8 hover:bg-blue-500/20 hover:text-blue-400 border border-transparent hover:border-white transition-all" onClick={() => handleBulkStatus('completed')}>
+                                    <CheckCircle2 className="h-3 w-3 mr-1.5" /> Mark Complete
                                 </Button>
-                                <Button size="sm" variant="ghost" className="h-8 hover:bg-blue-500/20 hover:text-blue-400" onClick={() => handleBulkStatus('pending')}>
-                                    <XSquare className="h-4 w-4 mr-2" /> Mark Pending
+                                <Button size="sm" variant="ghost" className="h-8 hover:bg-blue-500/20 hover:text-blue-400 border border-transparent hover:border-white transition-all" onClick={() => handleBulkStatus('pending')}>
+                                    <Clock className="h-3 w-3 mr-1.5" /> Mark Pending
                                 </Button>
                                 <div className="h-4 w-px bg-blue-500/20 mx-1 self-center" />
-                                <Button size="sm" variant="ghost" className="h-8 text-red-400 hover:text-red-300 hover:bg-red-500/10" onClick={handleBulkDelete}>
-                                    <Trash2 className="h-4 w-4 mr-2" /> Delete
+                                <Button size="sm" variant="ghost" className="h-8 text-red-400 hover:text-red-300 hover:bg-red-500/10 border border-transparent hover:border-white transition-all" onClick={handleBulkDelete}>
+                                    <Trash2 className="h-3 w-3 mr-1.5" /> Delete
                                 </Button>
                             </div>
                         </motion.div>

@@ -26,6 +26,7 @@ export function ImportDocumentDialog({ projectId, userId, onSuccess }: ImportDoc
     const [file, setFile] = useState<File | null>(null)
     const [loading, setLoading] = useState(false)
     const [dragActive, setDragActive] = useState(false)
+    const [isLoadingTrigger, setIsLoadingTrigger] = useState(false)
     const inputRef = useRef<HTMLInputElement>(null)
     const router = useRouter()
 
@@ -152,14 +153,26 @@ export function ImportDocumentDialog({ projectId, userId, onSuccess }: ImportDoc
         }
     }
 
+    const handleOpen = () => {
+        setIsLoadingTrigger(true)
+        setTimeout(() => {
+            setOpen(true)
+            setIsLoadingTrigger(false)
+        }, 500)
+    }
+
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white gap-2 shadow-lg shadow-blue-900/20">
-                    <Upload className="h-4 w-4" />
-                    Import Document
-                </Button>
-            </DialogTrigger>
+            {/* Replace DialogTrigger with Controlled Button */}
+            <Button
+                onClick={handleOpen}
+                disabled={isLoadingTrigger}
+                className="bg-blue-600 hover:bg-blue-700 text-white gap-2 shadow-lg shadow-blue-900/20"
+            >
+                {isLoadingTrigger ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
+                Import Document
+            </Button>
+
             <DialogContent className="sm:max-w-[500px] border-none bg-zinc-900/95 backdrop-blur-xl shadow-2xl text-white">
                 <DialogHeader>
                     <DialogTitle className="text-xl font-bold flex items-center gap-2">

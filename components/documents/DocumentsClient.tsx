@@ -47,6 +47,7 @@ export function DocumentsClient({ initialDocuments, projects, userId, plan }: Do
     const [sortOption, setSortOption] = useState('date-desc')
     const [selectedDocIds, setSelectedDocIds] = useState<string[]>([])
     const [loading, setLoading] = useState(false)
+    const [isDeleting, setIsDeleting] = useState(false)
     const [deletingId, setDeletingId] = useState<string | null>(null)
     const [upgradeOpen, setUpgradeOpen] = useState(false)
 
@@ -265,6 +266,7 @@ export function DocumentsClient({ initialDocuments, projects, userId, plan }: Do
 
     const executeBulkDelete = async () => {
         try {
+            setIsDeleting(true)
             const { error } = await supabase
                 .from('documents')
                 .delete()
@@ -276,15 +278,17 @@ export function DocumentsClient({ initialDocuments, projects, userId, plan }: Do
             setDocuments(prev => prev.filter(d => !selectedDocIds.includes(d.id)))
             toast.success("Documents deleted.")
             setSelectedDocIds([])
+            setConfirmBulkDelete(false)
         } catch (e) {
             toast.error("Failed to delete.")
         } finally {
-            setConfirmBulkDelete(false)
+            setIsDeleting(false)
         }
     }
 
     const executeDelete = async (id: string) => {
         try {
+            setIsDeleting(true)
             const { error } = await supabase
                 .from('documents')
                 .delete()
@@ -295,10 +299,11 @@ export function DocumentsClient({ initialDocuments, projects, userId, plan }: Do
             // Immediate UI Update
             setDocuments(prev => prev.filter(d => d.id !== id))
             toast.success('Deleted')
+            setConfirmDeleteId(null)
         } catch (e) {
             toast.error('Failed to delete')
         } finally {
-            setConfirmDeleteId(null)
+            setIsDeleting(false)
         }
     }
 
@@ -306,25 +311,25 @@ export function DocumentsClient({ initialDocuments, projects, userId, plan }: Do
     const ActionDropdown = ({ doc }: { doc: any }) => (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-8 w-8 p-0" onClick={(e) => e.stopPropagation()}>
+                <Button variant="ghost" className="h-8 w-8 p-0 border border-transparent hover:border-white transition-all" onClick={(e) => e.stopPropagation()}>
                     <span className="sr-only">Open menu</span>
                     <MoreHorizontal className="h-4 w-4" />
                 </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handlePreview(doc) }}>
+                <DropdownMenuItem className="cursor-pointer border border-transparent hover:border-white transition-all" onClick={(e) => { e.stopPropagation(); handlePreview(doc) }}>
                     <Eye className="mr-2 h-4 w-4" /> Preview
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDownload(doc) }}>
+                <DropdownMenuItem className="cursor-pointer border border-transparent hover:border-white transition-all" onClick={(e) => { e.stopPropagation(); handleDownload(doc) }}>
                     <Download className="mr-2 h-4 w-4" /> Download
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setDetailsDoc(doc) }}>
+                <DropdownMenuItem className="cursor-pointer border border-transparent hover:border-white transition-all" onClick={(e) => { e.stopPropagation(); setDetailsDoc(doc) }}>
                     <Info className="mr-2 h-4 w-4" /> Info
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                    className="text-red-500 focus:bg-red-500 focus:text-white cursor-pointer"
+                    className="text-red-500 focus:bg-red-500 focus:text-white cursor-pointer border border-transparent hover:border-white transition-all"
                     onClick={(e) => {
                         e.stopPropagation();
                         setConfirmDeleteId(doc.id)
@@ -350,34 +355,34 @@ export function DocumentsClient({ initialDocuments, projects, userId, plan }: Do
                     </div>
 
                     <Select value={typeFilter} onValueChange={setTypeFilter}>
-                        <SelectTrigger className="w-[140px] bg-zinc-900 border-zinc-800 hover:bg-zinc-800 transition-colors">
+                        <SelectTrigger className="w-[140px] bg-zinc-900 border-zinc-800 hover:bg-zinc-800 border border-transparent hover:border-white transition-all">
                             <div className="flex items-center gap-2">
                                 <Filter className="h-3.5 w-3.5 text-muted-foreground" />
                                 <SelectValue placeholder="Type" />
                             </div>
                         </SelectTrigger>
                         <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
-                            <SelectItem value="all">All Types</SelectItem>
-                            <SelectItem value="permit">Permit</SelectItem>
-                            <SelectItem value="contract">Contract</SelectItem>
-                            <SelectItem value="invoice">Invoice</SelectItem>
-                            <SelectItem value="change_order">Change Order</SelectItem>
-                            <SelectItem value="daily_log">Daily Log</SelectItem>
+                            <SelectItem value="all" className="cursor-pointer border border-transparent hover:border-white transition-all">All Types</SelectItem>
+                            <SelectItem value="permit" className="cursor-pointer border border-transparent hover:border-white transition-all">Permit</SelectItem>
+                            <SelectItem value="contract" className="cursor-pointer border border-transparent hover:border-white transition-all">Contract</SelectItem>
+                            <SelectItem value="invoice" className="cursor-pointer border border-transparent hover:border-white transition-all">Invoice</SelectItem>
+                            <SelectItem value="change_order" className="cursor-pointer border border-transparent hover:border-white transition-all">Change Order</SelectItem>
+                            <SelectItem value="daily_log" className="cursor-pointer border border-transparent hover:border-white transition-all">Daily Log</SelectItem>
                         </SelectContent>
                     </Select>
 
                     <Select value={sortOption} onValueChange={setSortOption}>
-                        <SelectTrigger className="w-[140px] bg-zinc-900 border-zinc-800 hover:bg-zinc-800 transition-colors">
+                        <SelectTrigger className="w-[140px] bg-zinc-900 border-zinc-800 hover:bg-zinc-800 border border-transparent hover:border-white transition-all">
                             <div className="flex items-center gap-2">
                                 <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
                                 <SelectValue placeholder="Sort" />
                             </div>
                         </SelectTrigger>
                         <SelectContent className="bg-zinc-900 border-zinc-800 text-white">
-                            <SelectItem value="date-desc">Newest First</SelectItem>
-                            <SelectItem value="date-asc">Oldest First</SelectItem>
-                            <SelectItem value="name-asc">Name A-Z</SelectItem>
-                            <SelectItem value="name-desc">Name Z-A</SelectItem>
+                            <SelectItem value="date-desc" className="cursor-pointer border border-transparent hover:border-white transition-all">Newest First</SelectItem>
+                            <SelectItem value="date-asc" className="cursor-pointer border border-transparent hover:border-white transition-all">Oldest First</SelectItem>
+                            <SelectItem value="name-asc" className="cursor-pointer border border-transparent hover:border-white transition-all">Name A-Z</SelectItem>
+                            <SelectItem value="name-desc" className="cursor-pointer border border-transparent hover:border-white transition-all">Name Z-A</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -387,7 +392,7 @@ export function DocumentsClient({ initialDocuments, projects, userId, plan }: Do
                         <Button
                             variant="ghost"
                             size="icon"
-                            className={`h-8 w-8 rounded-sm transition-all ${viewMode === 'table'
+                            className={`h-8 w-8 rounded-sm transition-all border border-transparent hover:border-white ${viewMode === 'table'
                                 ? 'bg-accent text-accent-foreground shadow-sm hover:bg-accent/90'
                                 : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
                                 }`}
@@ -398,7 +403,7 @@ export function DocumentsClient({ initialDocuments, projects, userId, plan }: Do
                         <Button
                             variant="ghost"
                             size="icon"
-                            className={`h-8 w-8 rounded-sm transition-all ${viewMode === 'grid'
+                            className={`h-8 w-8 rounded-sm transition-all border border-transparent hover:border-white ${viewMode === 'grid'
                                 ? 'bg-accent text-accent-foreground shadow-sm hover:bg-accent/90'
                                 : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
                                 }`}
@@ -453,11 +458,11 @@ export function DocumentsClient({ initialDocuments, projects, userId, plan }: Do
                             {selectedDocIds.length} selected
                         </span>
                         <div className="flex items-center gap-2">
-                            <Button size="sm" variant="ghost" className="hover:bg-blue-500/20 hover:text-blue-400 h-8 gap-2" onClick={handleBulkDownload} disabled={loading}>
+                            <Button size="sm" variant="ghost" className="hover:bg-blue-500/20 hover:text-blue-400 h-8 gap-2 border border-transparent hover:border-white" onClick={handleBulkDownload} disabled={loading}>
                                 {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
                                 Export Zip
                             </Button>
-                            <Button size="sm" variant="ghost" className="hover:bg-red-500/20 hover:text-red-400 h-8 gap-2" onClick={() => setConfirmBulkDelete(true)}>
+                            <Button size="sm" variant="ghost" className="hover:bg-red-500/20 hover:text-red-400 h-8 gap-2 border border-transparent hover:border-white" onClick={() => setConfirmBulkDelete(true)}>
                                 <Trash2 className="h-3 w-3" />
                                 Delete
                             </Button>
@@ -615,8 +620,10 @@ export function DocumentsClient({ initialDocuments, projects, userId, plan }: Do
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => confirmDeleteId && executeDelete(confirmDeleteId)} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={(e) => { e.preventDefault(); confirmDeleteId && executeDelete(confirmDeleteId) }} className="bg-red-600 hover:bg-red-700" disabled={isDeleting}>
+                            {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Delete"}
+                        </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
@@ -630,9 +637,9 @@ export function DocumentsClient({ initialDocuments, projects, userId, plan }: Do
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={executeBulkDelete} className="bg-red-600 hover:bg-red-700">
-                            {selectedDocIds.length === 1 ? 'Delete' : 'Delete All'}
+                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={(e) => { e.preventDefault(); executeBulkDelete() }} className="bg-red-600 hover:bg-red-700" disabled={isDeleting}>
+                            {isDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : (selectedDocIds.length === 1 ? 'Delete' : 'Delete All')}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

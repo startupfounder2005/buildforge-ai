@@ -399,12 +399,12 @@ export function ProfileTab({ user: initialUser }: { user: UserProfile }) {
                                 <Button onClick={(e) => {
                                     e.preventDefault()
                                     setIsEditing(true)
-                                }} variant="secondary" className="gap-2 text-foreground/80 font-medium shadow-sm border border-border/50 transition-all hover:bg-accent hover:text-white hover:border-accent">
+                                }} variant="secondary" className="gap-2 text-foreground/80 font-medium shadow-sm border border-transparent hover:border-white transition-all hover:bg-accent hover:text-white">
                                     <Edit2 className="h-4 w-4" /> Edit Profile
                                 </Button>
                             ) : (
                                 <div className="flex items-center gap-2">
-                                    <Button variant="ghost" onClick={(e) => {
+                                    <Button variant="ghost" className="border border-transparent hover:border-white transition-all" onClick={(e) => {
                                         e.preventDefault()
                                         setIsEditing(false)
                                     }} disabled={isPending}>Cancel</Button>
@@ -472,7 +472,7 @@ export function ProfileTab({ user: initialUser }: { user: UserProfile }) {
                                             <Button
                                                 type="button"
                                                 variant="secondary"
-                                                className="shadow-sm border border-border/50 hover:bg-accent hover:text-white hover:border-accent transition-all"
+                                                className="shadow-sm border border-transparent hover:bg-accent hover:text-white hover:border-white transition-all"
                                                 onClick={() => {
                                                     if (pendingEmail === user.email) {
                                                         toast.info("Email is unchanged. Enter a new email to update.")
