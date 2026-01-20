@@ -40,23 +40,32 @@ function SignupForm() {
         e.preventDefault()
         setError(null)
 
+        // Clear previous error from URL so useEffect triggers even if the SAME error happens again
+        if (errorParam) {
+            router.replace('/auth/signup', { scroll: false })
+        }
+
         if (password !== confirmPassword) {
             setError("Passwords do not match")
+            setLoading(false)
             return
         }
 
         if (password.length < 6) {
             setError("Password must be at least 6 characters")
+            setLoading(false)
             return
         }
 
         if (!/\d/.test(password)) {
             setError("Password must contain at least one number")
+            setLoading(false)
             return
         }
 
         if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
             setError("Password must contain at least one special character")
+            setLoading(false)
             return
         }
 
