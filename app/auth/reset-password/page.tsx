@@ -14,18 +14,22 @@ export default function ResetPasswordPage() {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
 
-    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    const handleAction = async (formData: FormData) => {
         setLoading(true)
         setError(null)
-        // updatePassword will handle the redirect on success
+        const result = await updatePassword(formData)
+        if (result?.error) {
+            setError(result.error)
+            setLoading(false)
+        }
     }
 
     return (
         <div className="flex min-h-screen items-center justify-center p-4">
             <Card className="w-full max-w-md">
-                <CardHeader className="text-center">
-                    <div className="flex justify-center mb-4">
-                        <ObsidianLogo className="h-12 w-12" />
+                <CardHeader className="text-center pt-8">
+                    <div className="flex justify-center mb-6">
+                        <ObsidianLogo className="h-24 w-24 drop-shadow-[0_0_20px_rgba(147,51,234,0.4)]" />
                     </div>
                     <CardTitle className="text-2xl font-bold">Reset Password</CardTitle>
                     <CardDescription>
@@ -33,7 +37,7 @@ export default function ResetPasswordPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form action={updatePassword} onSubmit={handleSubmit} className="space-y-4">
+                    <form action={handleAction} className="space-y-4">
                         {error && (
                             <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md">
                                 {error}

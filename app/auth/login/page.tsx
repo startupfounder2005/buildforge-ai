@@ -40,9 +40,9 @@ function LoginForm() {
     return (
         <div className="flex min-h-screen items-center justify-center p-4">
             <Card className="w-full max-w-md">
-                <CardHeader className="text-center">
-                    <div className="flex justify-center mb-4">
-                        <ObsidianLogo className="h-12 w-12" />
+                <CardHeader className="text-center pt-8">
+                    <div className="flex justify-center mb-6">
+                        <ObsidianLogo className="h-24 w-24 drop-shadow-[0_0_20px_rgba(147,51,234,0.4)]" />
                     </div>
                     <CardTitle className="text-2xl font-bold">Sign In</CardTitle>
                     <CardDescription>
@@ -76,8 +76,11 @@ function LoginForm() {
                                     </DialogTrigger>
                                     <DialogContent className="sm:max-w-md">
                                         <DialogHeader>
-                                            <DialogTitle>Reset Password</DialogTitle>
-                                            <DialogDescription>
+                                            <div className="flex justify-center mb-4">
+                                                <ObsidianLogo className="h-16 w-16 drop-shadow-[0_0_15px_rgba(147,51,234,0.3)]" />
+                                            </div>
+                                            <DialogTitle className="text-center">Reset Password</DialogTitle>
+                                            <DialogDescription className="text-center">
                                                 Enter your email address and we'll send you a link to reset your password.
                                             </DialogDescription>
                                         </DialogHeader>
