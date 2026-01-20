@@ -2,7 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 
 export async function login(formData: FormData) {
     const supabase = await createClient()
@@ -27,6 +27,7 @@ export async function login(formData: FormData) {
 
 export async function signup(formData: FormData) {
     const supabase = await createClient()
+    const adminSupabase = await createAdminClient()
 
     const email = formData.get('email') as string
     const password = formData.get('password') as string
@@ -35,6 +36,17 @@ export async function signup(formData: FormData) {
 
     if (process.env.NEXT_PUBLIC_SUPABASE_URL?.includes('your-project') || !process.env.NEXT_PUBLIC_SUPABASE_URL) {
         redirect('/auth/signup?error=Missing Supabase Configuration. Please check .env.local')
+    }
+
+    // Check if email already exists in profiles
+    const { data: existingUser } = await adminSupabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .single()
+
+    if (existingUser) {
+        redirect('/auth/signup?error=This email is already registered. Please sign in instead.')
     }
 
     const { error } = await supabase.auth.signUp({
