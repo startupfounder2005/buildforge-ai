@@ -46,7 +46,7 @@ export async function signup(formData: FormData) {
         .single()
 
     if (existingUser) {
-        redirect('/auth/signup?error=This email is already registered. Please sign in instead.')
+        redirect(`/auth/signup?error=${encodeURIComponent('This email is already registered. Please sign in instead.')}&t=${Date.now()}`)
     }
 
     const { error } = await supabase.auth.signUp({
@@ -61,7 +61,7 @@ export async function signup(formData: FormData) {
     })
 
     if (error) {
-        redirect('/auth/signup?error=' + error.message)
+        redirect(`/auth/signup?error=${encodeURIComponent(error.message)}&t=${Date.now()}`)
     }
 
     revalidatePath('/', 'layout')
