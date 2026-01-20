@@ -25,7 +25,7 @@
 - **Forgot Password Flow**: Implemented a complete password reset process using Supabase Auth:
     - Dedicated "Forgot Password" dialog on the login page with **loading states**.
     - Automated reset email delivery with a **highly-compatible table-based design**.
-    - Secure `/auth/reset-password` page for setting new credentials.
+    - Secure `/auth/reset-password` page with **robust password validation** (strength meter, regex requirements).
 
 ## Validation Results
 - **Milestone Precision**: Verified that "Due in X days" now correctly excludes non-working days for business-aligned tracking.

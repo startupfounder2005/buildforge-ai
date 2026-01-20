@@ -406,3 +406,4 @@
     - [x] Add `updatePassword` server action <!-- id: 843 -->
     - [x] Add loading spinners to auth forms <!-- id: 844 -->
     - [x] Improve email template clickability (table-based button) <!-- id: 845 -->
+    - [x] Implement robust password validation (zxcvbn + regex) <!-- id: 846 -->
