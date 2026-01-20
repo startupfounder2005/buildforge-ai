@@ -37,6 +37,7 @@ function LoginForm() {
     const message = searchParams.get('message')
     const [showPassword, setShowPassword] = React.useState(false)
     const [email, setEmail] = React.useState('')
+    const [resetEmail, setResetEmail] = React.useState('')
 
     return (
         <div className="flex min-h-screen items-center justify-center p-4">
@@ -70,7 +71,11 @@ function LoginForm() {
                                 type="email"
                                 placeholder="m@example.com"
                                 value={email}
-                                onChange={(e) => setEmail(e.target.value)}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setEmail(val);
+                                    setResetEmail(val);
+                                }}
                                 required
                             />
                         </div>
@@ -104,8 +109,8 @@ function LoginForm() {
                                                         name="email"
                                                         placeholder="m@example.com"
                                                         type="email"
-                                                        value={email}
-                                                        onChange={(e) => setEmail(e.target.value)}
+                                                        value={resetEmail}
+                                                        onChange={(e) => setResetEmail(e.target.value)}
                                                         required
                                                     />
                                                 </div>
