@@ -26,6 +26,7 @@ function SignupForm() {
     useEffect(() => {
         if (errorParam) {
             setError(errorParam)
+            setLoading(false)
         }
     }, [errorParam])
 
