@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { useSearchParams } from 'next/navigation'
 import React, { Suspense } from 'react'
-import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import { Eye, EyeOff, Loader2, Shield } from 'lucide-react'
 import { ObsidianLogo } from '@/components/ui/ObsidianLogo'
 import { useFormStatus } from 'react-dom'
 import {
@@ -68,11 +68,6 @@ function LoginForm() {
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {error && (
-                            <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md">
-                                {error}
-                            </div>
-                        )}
                         {message && (
                             <div className="bg-green-500/15 text-green-500 text-sm p-3 rounded-md">
                                 {message}
@@ -167,6 +162,12 @@ function LoginForm() {
                                 </Button>
                             </div>
                         </div>
+                        {error && (
+                            <div className="flex items-center gap-2 p-3 text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded-md">
+                                <Shield className="h-4 w-4" />
+                                <span>{error}</span>
+                            </div>
+                        )}
                         <Button type="submit" className="w-full" disabled={loading}>
                             {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                             Login
