@@ -21,6 +21,12 @@
 - **Global Search**: Improved search results layout and interaction.
 - **Document Wizard**: Cleaned up navigation and back-button behavior.
 
+### Auth & Security
+- **Forgot Password Flow**: Implemented a complete password reset process using Supabase Auth:
+    - Dedicated "Forgot Password" dialog on the login page with **loading states**.
+    - Automated reset email delivery with a **highly-compatible table-based design**.
+    - Secure `/auth/reset-password` page for setting new credentials.
+
 ## Validation Results
 - **Milestone Precision**: Verified that "Due in X days" now correctly excludes non-working days for business-aligned tracking.
 - **Visual Consistency**: Confirmed that all bulk action bars and buttons follow the new glassmorphism and themed border design system.

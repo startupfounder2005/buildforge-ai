@@ -398,3 +398,11 @@
         - [x] Trigger on Budget Alert (Smart Thresholds: 90%, 95%, 100%).
         - [x] Trigger on Team Invite (Mock).
         - [x] Trigger on Milestone Due/Expiring Subscription (Mock/Simulate).
+
+- [x] **Forgot Password Flow Implementation**
+    - [x] Add `requestPasswordReset` server action <!-- id: 840 -->
+    - [x] Implement Forgot Password dialog on Login page <!-- id: 841 -->
+    - [x] Create `/auth/reset-password` page <!-- id: 842 -->
+    - [x] Add `updatePassword` server action <!-- id: 843 -->
+    - [x] Add loading spinners to auth forms <!-- id: 844 -->
+    - [x] Improve email template clickability (table-based button) <!-- id: 845 -->

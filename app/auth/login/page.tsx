@@ -10,6 +10,7 @@ import { useSearchParams } from 'next/navigation'
 import React, { Suspense } from 'react'
 import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { ObsidianLogo } from '@/components/ui/ObsidianLogo'
+import { useFormStatus } from 'react-dom'
 import {
     Dialog,
     DialogContent,
@@ -19,6 +20,16 @@ import {
     DialogTitle,
     DialogTrigger,
 } from "@/components/ui/dialog"
+
+function SubmitButton({ children, className }: { children: React.ReactNode, className?: string }) {
+    const { pending } = useFormStatus()
+    return (
+        <Button type="submit" className={className} disabled={pending}>
+            {pending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {children}
+        </Button>
+    )
+}
 
 function LoginForm() {
     const searchParams = useSearchParams()
@@ -86,9 +97,9 @@ function LoginForm() {
                                                 </div>
                                             </div>
                                             <DialogFooter className="sm:justify-start">
-                                                <Button type="submit" className="w-full">
+                                                <SubmitButton className="w-full">
                                                     Send Reset Link
-                                                </Button>
+                                                </SubmitButton>
                                             </DialogFooter>
                                         </form>
                                     </DialogContent>
@@ -120,7 +131,7 @@ function LoginForm() {
                                 </Button>
                             </div>
                         </div>
-                        <Button type="submit" className="w-full">Login</Button>
+                        <SubmitButton className="w-full">Login</SubmitButton>
                     </form>
                 </CardContent>
                 <CardFooter className="flex justify-center">
