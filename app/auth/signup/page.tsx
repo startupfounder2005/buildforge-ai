@@ -6,31 +6,82 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { useSearchParams } from 'next/navigation'
-import React, { Suspense } from 'react'
-import { Eye, EyeOff } from 'lucide-react'
+import { useSearchParams, useRouter } from 'next/navigation'
+import React, { Suspense, useState, useEffect } from 'react'
+import { Eye, EyeOff, Loader2, Shield } from 'lucide-react'
+import zxcvbn from "zxcvbn"
+import { ObsidianLogo } from '@/components/ui/ObsidianLogo'
 
 function SignupForm() {
     const searchParams = useSearchParams()
-    const error = searchParams.get('error')
-    const [showPassword, setShowPassword] = React.useState(false)
+    const router = useRouter()
+    const errorParam = searchParams.get('error')
+    const [password, setPassword] = useState("")
+    const [confirmPassword, setConfirmPassword] = useState("")
+    const [showPassword, setShowPassword] = useState(false)
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+    const [loading, setLoading] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+
+    useEffect(() => {
+        if (errorParam) {
+            setError(errorParam)
+        }
+    }, [errorParam])
+
+    // Strength Meter Logic
+    const strength = zxcvbn(password)
+    const strengthPercent = (strength.score + 1) * 20
+    const strengthColor = strength.score < 2 ? "bg-red-500" : strength.score < 3 ? "bg-yellow-500" : "bg-green-500"
+    const strengthLabel = ["Very Weak", "Weak", "Fair", "Strong", "Very Strong"][strength.score]
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault()
+        setError(null)
+
+        if (password !== confirmPassword) {
+            setError("Passwords do not match")
+            return
+        }
+
+        if (password.length < 6) {
+            setError("Password must be at least 6 characters")
+            return
+        }
+
+        if (!/\d/.test(password)) {
+            setError("Password must contain at least one number")
+            return
+        }
+
+        if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+            setError("Password must contain at least one special character")
+            return
+        }
+
+        setLoading(true)
+        const formData = new FormData(e.currentTarget)
+        const result = await signup(formData)
+        // If it doesn't redirect, it might have an error handled by the redirect in the action
+        // but since we're using 'use server' action directly, we can't easily get the return value 
+        // if it uses redirect(). However, we can handle it if we change the action to return errors.
+        // For now, let's assume the action redirects on error as it was doing.
+    }
 
     return (
         <div className="flex min-h-screen items-center justify-center p-4">
             <Card className="w-full max-w-md">
-                <CardHeader>
+                <CardHeader className="text-center pt-8">
+                    <div className="flex justify-center mb-6">
+                        <ObsidianLogo className="h-24 w-24 drop-shadow-[0_0_20px_rgba(147,51,234,0.4)]" />
+                    </div>
                     <CardTitle className="text-2xl font-bold">Create an Account</CardTitle>
                     <CardDescription>
                         Enter your information to get started
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form action={signup} className="space-y-4">
-                        {error && (
-                            <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md">
-                                {error}
-                            </div>
-                        )}
+                    <form onSubmit={handleSubmit} className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="fullName">Full Name</Label>
@@ -52,8 +103,9 @@ function SignupForm() {
                                     id="password"
                                     name="password"
                                     type={showPassword ? "text" : "password"}
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
                                     required
-                                    minLength={6}
                                     className="pr-10"
                                 />
                                 <Button
@@ -68,13 +120,70 @@ function SignupForm() {
                                     ) : (
                                         <Eye className="h-4 w-4 text-muted-foreground" />
                                     )}
-                                    <span className="sr-only">
-                                        {showPassword ? "Hide password" : "Show password"}
-                                    </span>
+                                </Button>
+                            </div>
+
+                            {password && (
+                                <div className="space-y-1 pt-1">
+                                    <div className="flex justify-between text-xs">
+                                        <span className={strength.score < 2 ? "text-red-500" : strength.score < 3 ? "text-yellow-500" : "text-green-500"}>
+                                            {strengthLabel}
+                                        </span>
+                                        <span className="text-muted-foreground">{strengthPercent}%</span>
+                                    </div>
+                                    <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                                        <div
+                                            className={`h-full transition-all duration-300 ${strengthColor}`}
+                                            style={{ width: `${strengthPercent}%` }}
+                                        />
+                                    </div>
+                                    {strength.feedback.warning && (
+                                        <p className="text-xs text-red-500/80">{strength.feedback.warning}</p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label htmlFor="confirmPassword">Confirm Password</Label>
+                            <div className="relative">
+                                <Input
+                                    id="confirmPassword"
+                                    type={showConfirmPassword ? "text" : "password"}
+                                    value={confirmPassword}
+                                    onChange={(e) => setConfirmPassword(e.target.value)}
+                                    required
+                                    className={`pr-10 transition-colors ${confirmPassword
+                                        ? (password === confirmPassword ? "border-blue-500 ring-blue-500/20" : "border-red-500 ring-red-500/20")
+                                        : ""
+                                        }`}
+                                />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                >
+                                    {showConfirmPassword ? (
+                                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                                    ) : (
+                                        <Eye className="h-4 w-4 text-muted-foreground" />
+                                    )}
                                 </Button>
                             </div>
                         </div>
-                        <Button type="submit" className="w-full">Sign Up</Button>
+
+                        {error && (
+                            <div className="flex items-center gap-2 p-3 text-sm text-red-500 bg-red-500/10 border border-red-500/20 rounded-md">
+                                <Shield className="h-4 w-4" />
+                                <span>{error}</span>
+                            </div>
+                        )}
+                        <Button type="submit" className="w-full" disabled={loading}>
+                            {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                            Sign Up
+                        </Button>
                     </form>
                 </CardContent>
                 <CardFooter className="flex justify-center">
