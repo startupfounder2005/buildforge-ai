@@ -33,11 +33,26 @@ function SubmitButton({ children, className }: { children: React.ReactNode, clas
 
 function LoginForm() {
     const searchParams = useSearchParams()
-    const error = searchParams.get('error')
     const message = searchParams.get('message')
     const [showPassword, setShowPassword] = React.useState(false)
     const [email, setEmail] = React.useState('')
     const [resetEmail, setResetEmail] = React.useState('')
+    const [loading, setLoading] = React.useState(false)
+    const [error, setError] = React.useState<string | null>(null)
+
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault()
+        setError(null)
+        setLoading(true)
+
+        const formData = new FormData(e.currentTarget)
+        const result = await login(formData) as { error?: string } | undefined
+
+        if (result?.error) {
+            setError(result.error)
+            setLoading(false)
+        }
+    }
 
     return (
         <div className="flex min-h-screen items-center justify-center p-4">
@@ -52,7 +67,7 @@ function LoginForm() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form action={login} className="space-y-4">
+                    <form onSubmit={handleSubmit} className="space-y-4">
                         {error && (
                             <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md">
                                 {error}
@@ -117,7 +132,7 @@ function LoginForm() {
                                                     />
                                                 </div>
                                             </div>
-                                            <DialogFooter className="sm:justify-start">
+                                            <DialogFooter className="sm:justify-center">
                                                 <SubmitButton className="w-full">
                                                     Send Reset Link
                                                 </SubmitButton>
@@ -152,7 +167,10 @@ function LoginForm() {
                                 </Button>
                             </div>
                         </div>
-                        <SubmitButton className="w-full">Login</SubmitButton>
+                        <Button type="submit" className="w-full" disabled={loading}>
+                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            Login
+                        </Button>
                     </form>
                 </CardContent>
                 <CardFooter className="flex justify-center">

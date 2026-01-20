@@ -6,10 +6,21 @@ import { createClient, createAdminClient } from '@/lib/supabase/server'
 
 export async function login(formData: FormData) {
     const supabase = await createClient()
+    const adminSupabase = await createAdminClient()
 
-    // Type-safe data extraction
     const email = formData.get('email') as string
     const password = formData.get('password') as string
+
+    // Check if email exists first
+    const { data: existingUser } = await adminSupabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email)
+        .single()
+
+    if (!existingUser) {
+        return { error: "No account exists with this email" }
+    }
 
     const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -17,8 +28,11 @@ export async function login(formData: FormData) {
     })
 
     if (error) {
-        // Pass the actual message ("Invalid login credentials", "Email not confirmed", etc.)
-        redirect('/auth/login?error=' + error.message)
+        // Map common errors to specific user-friendly messages
+        if (error.message === "Invalid login credentials") {
+            return { error: "Wrong password" }
+        }
+        return { error: error.message }
     }
 
     revalidatePath('/', 'layout')
