@@ -1,15 +1,24 @@
 'use client'
 
 import Link from 'next/link'
-import { login } from '../actions'
+import { login, requestPasswordReset } from '../actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { useSearchParams } from 'next/navigation'
 import React, { Suspense } from 'react'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, Loader2 } from 'lucide-react'
 import { ObsidianLogo } from '@/components/ui/ObsidianLogo'
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog"
 
 function LoginForm() {
     const searchParams = useSearchParams()
@@ -48,9 +57,42 @@ function LoginForm() {
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
                                 <Label htmlFor="password">Password</Label>
-                                <Link href="#" className="text-sm underline text-muted-foreground hover:text-primary">
-                                    Forgot your password?
-                                </Link>
+                                <Dialog>
+                                    <DialogTrigger asChild>
+                                        <button type="button" className="text-sm underline text-muted-foreground hover:text-primary">
+                                            Forgot your password?
+                                        </button>
+                                    </DialogTrigger>
+                                    <DialogContent className="sm:max-w-md">
+                                        <DialogHeader>
+                                            <DialogTitle>Reset Password</DialogTitle>
+                                            <DialogDescription>
+                                                Enter your email address and we'll send you a link to reset your password.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <form action={requestPasswordReset}>
+                                            <div className="flex items-center space-x-2 py-4">
+                                                <div className="grid flex-1 gap-2">
+                                                    <Label htmlFor="reset-email" className="sr-only">
+                                                        Email
+                                                    </Label>
+                                                    <Input
+                                                        id="reset-email"
+                                                        name="email"
+                                                        placeholder="m@example.com"
+                                                        type="email"
+                                                        required
+                                                    />
+                                                </div>
+                                            </div>
+                                            <DialogFooter className="sm:justify-start">
+                                                <Button type="submit" className="w-full">
+                                                    Send Reset Link
+                                                </Button>
+                                            </DialogFooter>
+                                        </form>
+                                    </DialogContent>
+                                </Dialog>
                             </div>
                             <div className="relative">
                                 <Input
