@@ -1,0 +1,400 @@
+# BuildForge AI - Task List
+
+- [x] **Obsidian Rebranding**
+    - [x] Context: Rebrand from "BuildForge AI" to "Obsidian"
+    - [x] Visuals: Deep Black Theme & New Logo
+    - [x] UI: Update Sidebar, Header, Billing, Landing Page
+    - [x] Output: Update PDF Watermarks/Footers
+    - [x] Create detailed implementation plan (Architecture, Schema, Tech Stack) <!-- id: 0 -->
+    - [x] Define folder structure and component hierarchy <!-- id: 1 -->
+    - [x] Design Database Schema & RLS Policies <!-- id: 2 -->
+    - [x] user_review: APPROVE_PLAN <!-- id: 3 -->
+
+- [/] **Project Setup & Scaffolding**
+    - [x] Initialize Next.js 15 project with TypeScript, Tailwind, ESLint <!-- id: 4 -->
+    - [x] Install dependencies (shadcn/ui, lucide, supabase, openai, etc.) <!-- id: 5 -->
+    - [x] Setup Environment Variables (.env.local) <!-- id: 6 -->
+    - [x] Configure Tailwind & Theme (Dark Mode default) <!-- id: 7 -->
+
+- [x] **Supabase Integration & Auth**
+    - [x] Setup Supabase Client (SSR) <!-- id: 8 -->
+    - [x] Implement Auth Context & Middleware (Protected Routes) <!-- id: 9 -->
+    - [x] Create Login/Signup Pages <!-- id: 10 -->
+    - [x] Implement Profile Creation Trigger (Database Webhooks/Functions) <!-- id: 11 -->
+
+- [x] **Core Layout & Dashboard**
+    - [x] Build AppShell (Sidebar, Header, Navigation) <!-- id: 12 -->
+    - [x] Implement Dashboard Home (Stats, Recent Projects) <!-- id: 13 -->
+
+## Advanced Timeline & Budget
+- [x] **Budget Management**
+    - [x] Create `BudgetOverview` component (Set Budget, Progress Bar, Alerts)
+    - [x] Create `ExpenseManager` (Add/List Expenses)
+    - [x] Create `ExpenseManager` (Add/List Expenses)
+    - [x] Create `ExpenseManager` (Add/List Expenses)
+    - [x] Connect to Supabase (realtime updates)
+    - [x] Fix Budget Input UX & Initial Setup Logic <!-- id: 501 -->
+    - [x] Implement Bulk Expense Delete & Rename Run Rate <!-- id: 502 -->
+    - [x] Implement Bulk Document Select & Delete (Project Tab) <!-- id: 503 -->
+- [x] **Interactive Timeline**
+    - [x] Upgrade `ProjectTimeline` to Gantt-style view
+    - [x] Implement Drag & Drop (Framer Motion)
+    - [x] Add Milestone Editing (Status, Date)
+    - [x] Add AI Milestone Generator (Button + API Route)
+    - [x] Implement Edit & Delete Milestone Actions <!-- id: 200 -->
+    - [x] Implement Bulk Milestone Actions (Delete/Complete) <!-- id: 201 -->
+    - [x] Fix Bulk Actions UI Overlay Issue <!-- id: 203 -->
+    - [x] Replace Browser Confirm with Styled Dialog <!-- id: 204 -->
+    - [x] Unify Single and Bulk Delete Dialogs <!-- id: 205 -->
+    - [x] Sort Milestones by Upcoming Deadline <!-- id: 202 -->
+
+- [x] **Projects Module**
+    - [x] Implement Notification Smart Filtering (All Unread + Last 10 Read) <!-- id: 206 -->
+    - [x] Fix Notification List Scrolling <!-- id: 207 -->
+    - [x] Create Project List Page <!-- id: 14 -->
+- [x] **Subscription & Billing Notifications**
+    - [x] Implement Upgrade/Downgrade Notifications
+    - [x] Implement Expiration Warning Notifications (7 days, 1 day)
+    - [x] Implement Expiration Notification
+    - [x] Build "New Project" Modal/Page <!-- id: 15 -->
+    - [x] Implement Project Detail View <!-- id: 16 -->
+
+- [x] **Document Generation Engine (AI)**
+    - [x] Create Document Type Selection UI <!-- id: 17 -->
+    - [x] Implement AI Generation Service (OpenAI) <!-- id: 18 -->
+    - [x] Build PDF Generation Service (pdf-lib) <!-- id: 19 -->
+    - [x] Integrate preview and download flow <!-- id: 20 -->
+
+- [x] **Push changes to GitHub**
+## Project Overview & Timeline Upgrade
+- [x] Create Implementation Plan
+- [x] Update Database Schema (Budget & Expenses)
+- [x] Implement Real Data Fetching (Overview Stats)
+- [x] Redesign Timeline (Custom Gantt)
+- [x] Fix Missing Dependencies (Progress, Date-fns)
+- [ ] Verify UI with real datament Details UX**
+    - [x] Component: DocumentDetailsSheet (Sheet, Metadata, Notes)
+    - [x] Update DocumentTable to trigger Sheet on "View Details"
+    - [x] Add "Info" icon to table row for quick access
+    - [x] Build Risk Assessment UI <!-- id: 21 -->
+    - [x] Implement Prediction Logic (Mock/AI) <!-- id: 22 -->
+
+- [x] **Account & Subscription (Stripe)**
+    - [x] **Account Profile Overhaul**
+        - [x] Edit Mode & New UI (Two-column, Avatar Card)
+        - [x] "Bio" field & Realtime Updates
+        - [x] Avatar Upload with Crop (react-easy-crop)
+        - [x] Verification Flows (Email & Phone)
+        - [x] Country Code Support (Searchable Combobox)
+    - [x] Fix Delete Account (UX & Database) <!-- id: 5 -->
+- [x] Fix PDF Watermark Logic <!-- id: 6 -->
+    - [x] Implement Usage Tracking <!-- id: 24 -->
+    - [x] Setup Stripe Checkout & Webhooks <!-- id: 25 -->
+- [x] **Permits & Documents Tab Overhaul**
+    - [x] Global Import Dialog (Project Selector)
+    - [x] Documents Client (Grid/Table, Filter, Sort)
+    - [x] Bulk ZIP Export
+    - [x] Realtime Updates
+    - [x] **UX Refinements**
+        - [x] Global Generate Dialog (No redirect)
+        - [x] Fix Table Download Button (Fallback logic)
+        - [x] Fix Row Click (Details vs Selection)
+        - [x] Fix Delete Dialog UI (Singular vs Plural text)
+        - [x] Update Import Dialog "Cancel" Hover (Obsidian Purple)
+- [x] **Polish & Verification**
+    - [x] Final UI/UX Polish (Animations, Responsive checks) <!-- id: 26 -->
+    - [x] Verify RLS & Security <!-- id: 27 -->
+    - [x] Verify Legal Disclaimers <!-- id: 28 -->
+    - [x] Create Walkthrough Artifact <!-- id: 29 -->
+    - [x] Push fixes to GitHub (Import Notif, Delete Dialogs, Styling)
+    - [x] Add Loading Animation to Login Button (Landing Page)
+    - [x] Add Loading Animations to Dialog Actions (Docs, Projects, Budgets)
+    - [x] Add Loading Animations to Dialog Triggers (Docs, Projects, Budgets)
+    - [x] Fix Project Document Actions (Generate/Import inside Project)
+    - [x] Fix Wizard Back Button Navigation & Cancel Logic
+    - [x] Add Loading Animation to Generate Document Buttons (Placeholder & Project)
+    - [x] Fix Usage Metrics Tracking (Count Generations instead of Active Items)
+    - [x] Implementation Project Creation Notification
+    - [x] Enforce Due Date selection in Project Dialog
+    - [x] Enforce Location selection in Project Dialog
+    - [x] Align Filter Button Styling (Projects Tab)
+    - [x] Style Action Buttons with White Border Hover
+    - [x] Style Action Dropdown Items with White Border Hover
+    - [x] Notes Section - Save Note Button Highlight
+    - [x] Documents Section - Generate Documents Button Highlight
+    - [x] "Permits & Documents" Tab - Action Buttons & Dropdowns Hover
+    - [x] Account Tab - Profile Section - Change Email Button Hover
+    - [x] Global Button Styling - Remove White Border for Blue Text/Underline Buttons
+    - [x] "Set Budget" Button Hover Effect (Obsidian Purple)
+    - [x] Sidebar Hover Effect
+    - [x] Phase 2: Profile "Edit Profile" & "Cancel" Hover
+    - [x] Phase 2: Documents Action Button & Delete Item Hover
+    - [x] Phase 2: Documents Filter/Order Items Hover
+    - [x] Phase 2: Notification Bell Hover
+    - [x] **UI Refinements - Phase 3**
+    - [x] Project Documents Section: Add white border hover to bulk bar, row trigger, and dropdown items <!-- id: 700 -->
+    - [x] Budget Section: Add white border hover to expenses row trigger and dropdown items <!-- id: 701 -->
+    - [x] Notes Section: Add white border hover to notes row trigger, dropdown items, trash icon, and bulk bar <!-- id: 702 -->
+    - [x] Documents Section: Add white border hover to layout selection buttons and bulk bar <!-- id: 703 -->
+    - [x] Timeline Section: Add white border hover to milestone row trigger, dropdown items, and bulk bar <!-- id: 704 -->
+    - [x] **Metrics Fix**
+        - [x] Account Tab: Update `monthlyHistory` to count from `document_generations` table <!-- id: 800 -->
+    - [x] **UI Refinements - Status Badges**
+        - [x] Apply color-coded badges to Projects List <!-- id: 801 -->
+        - [x] Apply color-coded badges to Project Details <!-- id: 802 -->
+        - [x] Maintain original Dashboard Deadlines look (reverted) <!-- id: 803 -->
+    - [x] **UI Refinements - Borders & Hovers**
+        - [x] Landing Page: Add white hover border to Login button <!-- id: 804 -->
+        - [x] Header: Thin out profile circle outline ring on hover <!-- id: 805 -->
+        - [x] Documents: Fix "Generate New" button border and add white hover <!-- id: 806 -->
+        - [x] Wizard: Add white hover border to "Back" button <!-- id: 807 -->
+        - [x] Upgrade: Add white hover border to "Cancel" button <!-- id: 808 -->
+    - [x] **UI Refinements - Interaction & Filters**
+        - [x] Safety Report: Make time field interactable and selectable <!-- id: 810 -->
+        - [x] Billing Tab: Add white hover border to "Upgrade to Pro" button <!-- id: 811 -->
+        - [x] Documents: Restructure type filters (Permit, Contract, Safety Report, etc.) <!-- id: 812 -->
+        - [x] Import Dialog: Add white hover border to "Cancel" button <!-- id: 813 -->
+        - [x] Documents: Simplify status badges to "AI Generated" and "Imported" <!-- id: 814 -->
+- [x] **Projects Management Enhancements**
+    - [x] Add `deleteProjects` bulk action to `actions.ts` <!-- id: 820 -->
+    - [x] Implement bulk selection (checkboxes) in Projects table <!-- id: 821 -->
+    - [x] Add Layout (Grid/Table) and Sort controls to Projects overview <!-- id: 822 -->
+    - [x] Implement Grid view for Projects <!-- id: 823 -->
+    - [x] Add bulk delete action bar for selected projects <!-- id: 824 -->
+    - [x] Projects: Refine overview layout (Two-row control system) <!-- id: 825 -->
+    - [x] Projects Bulk: Add white hover border to "Cancel" button <!-- id: 826 -->
+    - [x] Projects: Improve layout spacing and add "LAYOUT:" label <!-- id: 827 -->
+    - [x] Projects: Add white hover border to Sort dropdown items <!-- id: 828 -->
+    - [x] Documents Bulk: Apply glassmorphism hover effect and remove white border <!-- id: 829 -->
+    - [x] Project Documents: Apply glassmorphism hover (themed borders) to bulk actions <!-- id: 830 -->
+    - [x] Project Budget: Theme "Set Budget" button hover (Obsidian Dark Purple) <!-- id: 831 -->
+    - [x] Project Notes: Add light blue bulk action bar with selection count <!-- id: 836 -->
+    - [x] Project Notes: Apply glassmorphism hover (white text base) to bulk actions <!-- id: 832 -->
+    - [x] Landing Page: Theme "Login" button hover (Obsidian Dark Purple) <!-- id: 833 -->
+    - [x] Timeline Section: Apply glassmorphism hover (white text base) to bulk actions <!-- id: 834 -->
+    - [x] Project Overview: Fix Next Milestone due date to use business days <!-- id: 835 -->
+    - [x] Sync all refinements to GitHub <!-- id: 837 -->
+
+- [x] **UI/UX Overhaul (User Req)**
+    - [x] Update Sidebar (New items & Icons) <!-- id: 30 -->
+    - [x] Fix "Save Changes" functionality
+        - [x] Ensure `bio` and `phone` columns exist in DB (User ran SQL)
+        - [x] Debug `updateProfile` Action not receiving data (Fixed empty string handling)
+        - [x] Add logging to trace execution (Added and then removed)
+    - [x] Implement Phone Number Verification Flow
+        - [x] Verify Button UI state (Added button type="button")
+        - [x] SMS Sending Logic (Supabase Provider enabled by user)
+        - [x] Verification Dialog & Code Input (Refactored `initiatePhoneVerification`)
+        - [x] Success State (Green Checkmark)
+    - [x] Refine Email & Phone UI
+        - [x] Standardize Verified Badges (Gray background, similar icons)
+        - [x] Remove standalone "Change Email" button
+        - [x] Allow email editing in "Edit Mode"
+        - [x] Green Verified Badge (Updated to green-500)
+        - [x] Email Change Logic: Show new email + Verify Button if changed
+        - [x] Re-enable "Verify" button for Email if unverified
+        - [x] Implement Dialog for Email Verification (OTP Code input)
+    - [x] Create Help Page (`/dashboard/help`)
+    - [x] Fix Sidebar Overlap (remove `inset` variant)
+    - [x] Create Settings Page (`/dashboard/settings`) <!-- id: 5 -->
+    - [x] Fix Sidebar Collapse Width Issue <!-- id: 6 -->
+    - [x] Verify Sidebar and Settings <!-- id: 7 -->
+    - [x] Verification and Walkthrough <!-- id: 8 -->
+    - [x] Verify Dark Mode Palette (#111111) <!-- id: 33 -->
+    - [x] Darken Accent Color (Match Sledgehammer Logo)
+
+- [x] **Modern Dashboard Overhaul**
+    - [x] Add `due_date` to `projects` table <!-- id: 34 -->
+    - [x] Install dependencies (chart.js, framer-motion) <!-- id: 35 -->
+    - [x] Create `OverviewStats` (Hero Cards) <!-- id: 36 -->
+    - [x] Create `RecentActivity` (Feed) <!-- id: 37 -->
+    - [x] Create `UpcomingDeadlines` (List) <!-- id: 38 -->
+    - [x] Create `InsightsChart` (Visuals) <!-- id: 39 -->
+    - [x] Create `QuickActions` (Buttons) <!-- id: 40 -->
+    - [x] Assemble `app/dashboard/page.tsx` <!-- id: 41 -->
+
+- [ ] **Projects Tab Overhaul**
+    - [x] Add `notes` to `projects` table <!-- id: 42 -->
+    - [x] Update `NewProjectDialog` (Date, Status, Notes) <!-- id: 43 -->
+    - [x] Create `ProjectStats` (Pie Chart) <!-- id: 44 -->
+    - [x] Create `ProjectFilters` (Search/Sort) <!-- id: 45 -->
+    - [x] Rebuild `ProjectsPage` (Grid+Filters) <!-- id: 46 -->
+    - [x] Build `ProjectTimeline` (Gantt) <!-- id: 47 -->
+    - [x] Overhaul `ProjectDetailsPage` (Tabs) <!-- id: 48 -->
+    - [x] Implement Actions Menu (Delete Project) <!-- id: 49 -->
+    - [ ] **Data-Rich Enhancements (Current)**
+        - [x] Schema: `project_notes`, `project_milestones`, `documents` update <!-- id: 50 -->
+        - [x] Component: `ProjectNotes` (List View, Edit/Delete, Rich Text) <!-- id: 51 -->
+        - [x] Feature: Bulk Note Actions (Delete & Zip Export)
+            - [x] Refinement: Better Delete Dialogs & Button Consistency
+        - [ ] Component: `ProjectTimeline` (Google Gantt) <!-- id: 52 -->
+        - [x] Component: `NewDocumentWizard` (Advanced Form) <!-- id: 53 -->
+        - [x] Feature: Hyper-Realistic PDF Engine (Chicago/Austin Style) <!-- id: 55 -->
+        - [ ] Page: Update `ProjectDetails` Tabs <!-- id: 54 -->
+    - [x] **UI Polish & UX Improvements**
+        - [x] Fix "Back" button in Document Wizard (Handle Step 1 navigation)
+        - [x] Add "Are you sure?" confirmation dialog for Document deletion
+        - [x] Fix layout artifact (connector line) in Wizard Header
+    - [x] **Server Restart**
+        - [x] Restart development server to apply changes
+        - [x] Fix layout artifact (connector line) in Wizard Header Schedule Grid & Bold Totals
+        - [x] 72pt Diagonal Watermark
+    - [x] **Document Wizard Overhaul**
+        - [x] Refactor `NewDocumentWizard` (5-Step, Zod, React Hook Form)
+        - [x] Step 1: Project Basics (Visual Type Chooser)
+        - [x] Step 2: Parties Information (Owner/Contractor)
+    - [x] **PDF Polish & Perfection**
+        - [x] Correct Signature Layout (Dynamic Positioning)
+        - [x] Scope of Work Paragraph Box
+        - [x] Fee Schedule Table (70/30 split, bold totals)
+        - [x] **Special Conditions Pagination** (Smart split: Header + 1 item logic) -> **Replaced with Forced Page 2 logic**
+        - [x] **Page 1 Layout**: Vertically centered content block
+    - [x] **Global Search Implementation**
+        - [x] Create GlobalSearch component (Command, Supabase, Router)
+        - [x] Integrated into Dashboard Layout (Top Bar)
+        - [x] Realtime Search & Navigation Logic
+        - [x] **Smart Search Logic**: Category Keywords & Type Search
+        - [x] **UI Polish**: Seamless Input & Badges
+    - [x] **Import Document Feature**
+        - [x] Schema Update (file_url, is_official)
+        - [x] Component: ImportDocumentDialog (Upload & Form)
+        - [x] Update Document List (Badges & External Links)
+    - [x] Align card heights in Profile section of Account tab
+- [x] Ensure avatar card dynamically updates with profile changes
+- [x] Change accent color of grid/card layout selector in Permits & Documents tab to purple theme
+- [x] Round storage usage number to 4 decimal places
+- [x] Update layout selector color to match sidebar hover (#7C3AED)
+- [x] Limit bio text to 150 characters and fix overflow wrappingration
+    - [x] **UI Polish & Dashboard Integration**
+        - [x] Integrate Global Generate Dialog in Dashboard Quick Actions
+        - [x] Add Redirect to Documents Tab after Generation
+        - [x] Fix Toggle Button contrast (Dark Icon on Amber)
+        - [x] Enhance Filter/Sort Hover States
+        - [x] Update Delete Dropdown Item (Red Hover)
+
+- [x] **Safety Report Generation**
+    - [x] Add Safety Report category to Wizard <!-- id: 56 -->
+    - [x] Implement conditional fields (Incident, Weather, etc.) <!-- id: 57 -->
+    - [x] Update Backend API for Safety Data & AI Prompt <!-- id: 58 -->
+    - [x] Create Safety Report PDF Layout (Red Header, Prevention Measures) <!-- id: 59 -->
+    - [x] Verify Safety Report Generation <!-- id: 60 -->
+
+- [x] **PDF Refinements (Safety Report)**
+    - [x] **Watermark**: "MOCK ONLY..." 72pt diagonal red on all pages.
+    - [x] **Footer**: Stronger legal disclaimer (Applied globally).
+    - [x] **Address**: Deduplicate city/state names.
+    - [x] **Layout**: Dynamic height for Description/Actions to avoid grid overlap.
+    - [x] **Visuals**: Soften yellow header to Amber (#FFC107).
+    - [x] **Pagination**: implement multi-page flow for long content with headers.
+
+- [x] **Debugging & Quality Assurance**
+    - [x] Resolve linting errors and warnings (2 errors, 6 warnings)
+
+- [x] **Backend Integration**
+    - [x] Schema Update (phone, avatar_url)
+    - [x] Server Actions (updateProfile, uploadAvatar)
+    - [x] Connect ProfileTab to Real Data
+    - [x] Storage Bucket Setup (SQL)
+    - [x] Connect UsageTab to Real Data
+    - [x] Push Project to GitHub (buildforge-ai)
+    - [x] Push Project to GitHub (buildforge-ai)
+    - [x] Connect BillingTab to Stripe (Next Step)
+
+- [x] **Pro Plan & Feature Gating**
+    - [x] Backend: Rate Limit Logic (5 docs/month)
+    - [x] Backend: Conditional Watermark Logic
+    - [x] UI: Update BillingTab Features (Free vs Pro)
+    - [x] UI: Implement UsageTab Progress Bar
+
+- [x] **Project Limits & UI Updates**
+    - [x] Backend: Enforce 1 Project Limit for Free Tier
+    - [x] UI: Update BillingTab (Remove Procore, Show Project Limits)
+    - [x] UI: Projects Tab Banner/Toast for Limit (Toast implemented via action return)
+    - [x] UI: Update UsageTab with Project Count
+
+- [x] **Bug Fixes**
+    - [x] Update "Get Started" link to point to Signup page instead of Login/Dashboard
+
+- [x] **Security Enhancements**
+    - [x] Implement Client-Side Inactivity Timeout (Auto-logout)
+
+- [x] **Auth Enhancements**
+    - [x] Implement Email OTP Verification UI & Logic
+    - [x] Configure SendGrid SMTP (User Guide)
+    - [x] Update OTP Input Length to 8 digits
+
+- [x] **Account Security & Styling (User Req)**
+    - [x] Implement Password Update Logic (Validation, Strength, Re-auth)
+    - [x] Revert Email Field Styling (Grayed out in view mode)
+    - [x] Style Phone Field (Grayed out if verified)
+    - [x] Enhance Password Validation (Numbers, Special Chars)
+- [x] **Project Feature Refinements**
+    - [x] Display Project Description in Overview
+- [ ] **PDF Generation (Subcontractor Agreement)**
+    - [x] Update `generate-doc/route.ts` to map contract data
+    - [x] Implement `subcontractor_agreement` template in `pdf-service.ts`
+    - [x] Verify PDF layout and watermark
+
+- [x] **Project Bid PDF Generation**
+    - [x] Update `pdf-service.ts`: Bid Template (Header, Sealed Logo, Tables)
+    - [x] Update `generate-doc/route.ts`: Handle 'bid' category & AI Logic
+    - [x] Verify PDF Output (Mock Data Test)
+
+- [x] **UI Polish & Improvements**
+    - [x] Add hover effect to Header profile circle
+    - [x] Improve "Edit Profile" and "Verify Now" buttons UI
+    - [x] Change "Save Changes" buttons to green (Account & Project Edit)
+    - [x] Reduce Sidebar spacing (Logo <> Tabs)
+    - [x] **New UI Refinements (User Req)**
+        - [x] Fix "Quick Actions" accent color (hardcoded -> var)
+        - [x] Fix "Documents Layout" accent color (hardcoded -> var)
+        - [x] Fix "Login" button hover accent
+        - [x] Add "Create Doc" button to Project Overview Empty State
+        - [x] Add "Generate Doc" button to Documents List Empty State
+        - [x] Implement "AI Suggest" for Timeline (Connect to API)
+        - [x] **Budget Logic Refinements (User Req)**
+            - [x] Hide "Recent Expenses" if no budget is set
+            - [x] Guard "Add Expense" button (Show "Set Budget" dialog if no budget)
+            - [x] Validate Budget Input (Number check, non-negative)
+            - [x] Validate Budget Input (Number check, non-negative)
+            - [x] Validate Expense Input (Number check, positive)
+            - [x] Make Budget Optional in New Project Dialog
+            - [x] Hide "Recent Expenses" and "Add Expense" if no budget set
+            - [x] Fix Delete Dialog UI (Singular vs Plural text)
+
+- [x] **UI Refinements (Round 2)**
+    - [x] Fix "Verify Now" hover (too bright in dark mode)
+    - [x] Improve "Edit Profile" hover (more visible)
+    - [x] Revert "Create Project" button to Blue
+    - [x] Email Change UX: Make input editable, check for changes before dialog
+    - [x] Style "Change" email button as a proper button
+
+- [x] **UI Refinements (Round 3)**
+    - [x] "Edit Profile": Remove scale effect, keep bg hover
+    - [x] "Change" Email Button: Use purple hover
+    - [x] Fix "Latest Documents" Limit (Increased to 7)
+    - [x] Fix "Import Document" Notification (Global Dialog consistency)
+    - [x] "Log Out" Button: Red background/White text on hover
+    - [x] Phone: Remove duplicate icon
+    - [x] Role: Convert to styled Badge (color coded)
+
+- [x] **UI Refinements (Round 4)**
+    - [x] "Change" Email Button: Solid purple background on hover
+    - [x] "Edit Profile" Button: Solid purple background on hover (matching Change button)
+- [x] **Notification System Implementation**
+    - [x] **Backend: Supabase Integration**
+        - [x] Schema: `notifications` table (id, user_id, type, title, message, link, is_read, ...).
+        - [x] RLS Policies: Users can only see/update their own notifications.
+        - [x] Edge Function: Trigger for Milestones Due (Cron).
+        - [x] Triggers: Database triggers or App Logic for New Doc, Team Invite, Budget Alert.
+    - [x] **Frontend: UI Components**
+        - [x] Component: `NotificationBell` (Icon + Badge).
+        - [x] Component: `NotificationList` (Dropdown/Popover).
+        - [x] Component: `NotificationItem` (Card style, Icons, Hover effects).
+        - [x] Realtime: Hook up Supabase Realtime subscription.
+    - [x] **Integration Points**
+        - [x] Trigger on Document Generation (Success).
+        - [x] Trigger on Document Generation (Success).
+        - [x] Trigger on Budget Alert (Smart Thresholds: 90%, 95%, 100%).
+        - [x] Trigger on Team Invite (Mock).
+        - [x] Trigger on Milestone Due/Expiring Subscription (Mock/Simulate).
