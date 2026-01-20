@@ -36,6 +36,7 @@ function LoginForm() {
     const error = searchParams.get('error')
     const message = searchParams.get('message')
     const [showPassword, setShowPassword] = React.useState(false)
+    const [email, setEmail] = React.useState('')
 
     return (
         <div className="flex min-h-screen items-center justify-center p-4">
@@ -63,7 +64,15 @@ function LoginForm() {
                         )}
                         <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
-                            <Input id="email" name="email" type="email" placeholder="m@example.com" required />
+                            <Input
+                                id="email"
+                                name="email"
+                                type="email"
+                                placeholder="m@example.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                            />
                         </div>
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
@@ -95,6 +104,8 @@ function LoginForm() {
                                                         name="email"
                                                         placeholder="m@example.com"
                                                         type="email"
+                                                        value={email}
+                                                        onChange={(e) => setEmail(e.target.value)}
                                                         required
                                                     />
                                                 </div>
