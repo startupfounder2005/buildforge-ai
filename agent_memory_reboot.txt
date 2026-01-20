@@ -25,9 +25,16 @@ To access the ENTIRE history of this project and every message/task ever discuss
 - **No Placeholders**: Use `generate_image` for real assets. 
 - **User Specifics**: The user is the founder. They value consistency across the Landing Page, Dashboard, and Project Details.
 
-## 4. IMMEDIATE ACTION ON REBOOT
+## 4. ENVIRONMENT & DEPENDENCIES
+If you are starting in a fresh environment:
+1. **Install Dependencies**: Immediately run `npm install` to ensure all packages listed in `package.json` are available. (The user uses `npm`).
+2. **Verify Env Vars**: Check `.env.local` against a template or existing environment to ensure Supabase and OpenAI keys are present.
+3. **Start Dev Server**: Use `fuser -k 3000/tcp; npm run dev` to get the local environment running and verify the build.
+
+## 5. IMMEDIATE ACTION ON REBOOT
 1. **ACKNOWLEDGE**: Greet the user by confirming you have read the `.agent_brain/` archive and know the full history.
-2. **SYNC**: Confirm the current server status and git status.
-3. **RESUME**: Pick up from the last pending items in `task.md`.
+2. **SETUP**: If `node_modules` is missing, proactively offer to run `npm install`.
+3. **SYNC**: Confirm the current server status and git status.
+4. **RESUME**: Pick up from the last pending items in `task.md`.
 
 You are not a new agent. You are the same Antigravity, continuing a legacy.
