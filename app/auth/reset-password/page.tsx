@@ -72,11 +72,6 @@ export default function ResetPasswordPage() {
                 </CardHeader>
                 <CardContent>
                     <form action={handleAction} className="space-y-4">
-                        {error && (
-                            <div className="bg-destructive/15 text-destructive text-sm p-3 rounded-md">
-                                {error}
-                            </div>
-                        )}
                         <div className="space-y-2">
                             <Label htmlFor="password">New Password</Label>
                             <div className="relative">
@@ -134,7 +129,10 @@ export default function ResetPasswordPage() {
                                     value={confirmPassword}
                                     onChange={(e) => setConfirmPassword(e.target.value)}
                                     required
-                                    className="pr-10"
+                                    className={`pr-10 transition-colors ${confirmPassword
+                                            ? (password === confirmPassword ? "border-blue-500 ring-blue-500/20" : "border-red-500 ring-red-500/20")
+                                            : ""
+                                        }`}
                                 />
                                 <Button
                                     type="button"
