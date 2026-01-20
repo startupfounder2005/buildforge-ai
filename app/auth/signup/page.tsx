@@ -40,11 +40,6 @@ function SignupForm() {
         e.preventDefault()
         setError(null)
 
-        // Clear previous error from URL so useEffect triggers even if the SAME error happens again
-        if (errorParam) {
-            router.replace('/auth/signup', { scroll: false })
-        }
-
         if (password !== confirmPassword) {
             setError("Passwords do not match")
             setLoading(false)
@@ -71,11 +66,12 @@ function SignupForm() {
 
         setLoading(true)
         const formData = new FormData(e.currentTarget)
-        const result = await signup(formData)
-        // If it doesn't redirect, it might have an error handled by the redirect in the action
-        // but since we're using 'use server' action directly, we can't easily get the return value 
-        // if it uses redirect(). However, we can handle it if we change the action to return errors.
-        // For now, let's assume the action redirects on error as it was doing.
+        const result = await signup(formData) as { error?: string } | undefined
+
+        if (result?.error) {
+            setError(result.error)
+            setLoading(false)
+        }
     }
 
     return (
