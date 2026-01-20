@@ -82,7 +82,9 @@ function LoginForm() {
                         <div className="space-y-2">
                             <div className="flex items-center justify-between">
                                 <Label htmlFor="password">Password</Label>
-                                <Dialog>
+                                <Dialog onOpenChange={(open) => {
+                                    if (open) setResetEmail(email);
+                                }}>
                                     <DialogTrigger asChild>
                                         <button type="button" className="text-sm underline text-muted-foreground hover:text-primary">
                                             Forgot your password?
